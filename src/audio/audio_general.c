@@ -1863,6 +1863,7 @@ void Audio_UpdateVoice(void) {
         AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_VOICE, 15, 4, voiceBank);
         AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_VOICE, 15, 5, voiceIdHi);
         AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_VOICE, 15, 6, voiceIdLo);
+        // AUDIOCMD_CHANNEL_SET_STEREO(SEQ_PLAYER_VOICE, 15, 0x10);
         sSetNextVoiceId = false;
     } else if ((sMuteBgmForVoice) && (Audio_GetCurrentVoice() == 0)) {
         Audio_SetSequenceFade(SEQ_PLAYER_BGM, 2, 127, 15);

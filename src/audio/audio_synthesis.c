@@ -4,15 +4,25 @@
 #include "endianness.h"
 #include "port/Engine.h"
 
+// dcampora: Note every location starts at 0x450 (why?)
 #define DMEM_WET_SCRATCH 0x470
 #define DMEM_COMPRESSED_ADPCM_DATA 0x990
 #define DMEM_LEFT_CH 0x990
-#define DMEM_RIGHT_CH 0xB10
+#define DMEM_RIGHT_CH (DMEM_LEFT_CH + DMEM_1CH_SIZE)
+#define DMEM_CENTER_CH (DMEM_LEFT_CH + 2 * DMEM_1CH_SIZE)
+#define DMEM_SUBWOOFER_CH (DMEM_LEFT_CH + 3 * DMEM_1CH_SIZE)
+#define DMEM_REAR_LEFT_CH (DMEM_LEFT_CH + 4 * DMEM_1CH_SIZE)
+#define DMEM_REAR_RIGHT_CH (DMEM_LEFT_CH + 5 * DMEM_1CH_SIZE)
 #define DMEM_HAAS_TEMP 0x650
 #define DMEM_TEMP 0x450
 #define DMEM_UNCOMPRESSED_NOTE 0x5F0
-#define DMEM_WET_LEFT_CH 0xC90
-#define DMEM_WET_RIGHT_CH 0xE10 // = DMEM_WET_LEFT_CH + DMEM_1CH_SIZE
+#define DMEM_WET_LEFT_CH (DMEM_LEFT_CH + 6 * DMEM_1CH_SIZE)
+#define DMEM_WET_RIGHT_CH (DMEM_WET_LEFT_CH + DMEM_1CH_SIZE)
+#define DMEM_WET_CENTER_CH (DMEM_WET_LEFT_CH + 2 * DMEM_1CH_SIZE)
+#define DMEM_WET_SUBWOOFER_CH (DMEM_WET_LEFT_CH + 3 * DMEM_1CH_SIZE)
+#define DMEM_WET_REAR_LEFT_CH (DMEM_WET_LEFT_CH + 4 * DMEM_1CH_SIZE)
+#define DMEM_WET_REAR_RIGHT_CH (DMEM_WET_LEFT_CH + 5 * DMEM_1CH_SIZE)
+
 #define SAMPLE_SIZE sizeof(s16)
 
 typedef enum {
@@ -672,6 +682,7 @@ Acmd* AudioSynth_Update(Acmd* aList, s32* cmdCount, s16* aiBufStart, s32 aiBufLe
     }
 
     aiBufPtr = aiBufStart;
+
     for (i = gAudioBufferParams.ticksPerUpdate; i > 0; i--) {
         if (i == 1) {
             chunkLen = aiBufLen;
@@ -692,7 +703,7 @@ Acmd* AudioSynth_Update(Acmd* aList, s32* cmdCount, s16* aiBufStart, s32 aiBufLe
         aCmdPtr =
             AudioSynth_DoOneAudioUpdate((s16*) aiBufPtr, chunkLen, aCmdPtr, gAudioBufferParams.ticksPerUpdate - i);
         aiBufLen -= chunkLen;
-        aiBufPtr += chunkLen * 2;
+        aiBufPtr += chunkLen * 6; // Update to handle 6 channels
     }
 
     for (j = 0; j < gNumSynthReverbs; j++) {
@@ -712,7 +723,7 @@ Acmd* AudioSynth_LoadReverbSamples(Acmd* aList, s32 aiBufLen, s16 reverbIndex, s
     s16 sp62;
     s16 sp60;
 
-    aClearBuffer(aList++, DMEM_WET_LEFT_CH, DMEM_2CH_SIZE);
+    aClearBuffer(aList++, DMEM_WET_LEFT_CH, DMEM_6CH_SIZE);
 
     if (gSynthReverbs[reverbIndex].downsampleRate == 1) {
         aList = AudioSynth_LoadRingBufferPart(aList, DMEM_WET_LEFT_CH, sp64->startPos, sp64->lengthA, reverbIndex);
@@ -804,7 +815,7 @@ Acmd* AudioSynth_DoOneAudioUpdate(s16* aiBuf, s32 aiBufLen, Acmd* aList, s32 upd
         }
     }
 
-    aClearBuffer(aList++, DMEM_LEFT_CH, DMEM_2CH_SIZE);
+    aClearBuffer(aList++, DMEM_LEFT_CH, DMEM_6CH_SIZE);
 
     j = 0;
     for (i = 0; i < gNumSynthReverbs; i++) {
@@ -831,10 +842,10 @@ Acmd* AudioSynth_DoOneAudioUpdate(s16* aiBuf, s32 aiBufLen, Acmd* aList, s32 upd
         j++;
     }
 
-    j = aiBufLen * 2;
+    j = aiBufLen * 6;
     aSetBuffer(aList++, 0, 0, DMEM_TEMP, j);
-    aInterleave(aList++, DMEM_LEFT_CH, DMEM_RIGHT_CH);
-    aSaveBuffer(aList++, DMEM_TEMP, OS_K0_TO_PHYSICAL(aiBuf), j * 2);
+    aInterleave(aList++, DMEM_LEFT_CH, DMEM_RIGHT_CH, DMEM_CENTER_CH, DMEM_SUBWOOFER_CH, DMEM_REAR_LEFT_CH, DMEM_REAR_RIGHT_CH);
+    aSaveBuffer(aList++, DMEM_TEMP, OS_K0_TO_PHYSICAL(aiBuf), j * 6);
 
     return aList;
 }
@@ -1337,24 +1348,25 @@ Acmd* AudioSynth_ProcessEnvelope(Acmd* aList, NoteSubEu* noteSub, NoteSynthesisS
         switch (delaySide) {
             case HAAS_EFFECT_DELAY_LEFT:
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x65B1C9E1, 0);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x65B1C9E1, noteSub->bitField0.stereoStrongRight);
                 break;
 
             case HAAS_EFFECT_DELAY_RIGHT:
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x9965C9E1, 0);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x9965C9E1, noteSub->bitField0.stereoStrongRight);
                 break;
 
             default: // HAAS_EFFECT_DELAY_NONE
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, 0);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, noteSub->bitField0.stereoStrongRight);
                 break;
         }
     } else {
+        // dcampora: TODO
         aEnvSetup1(aList++, (sourceReverbVol & 0x7F), rampReverb, rampLeft, rampRight);
         aEnvSetup2(aList++, curVolLeft, curVolRight);
         aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                  noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, 0);
+                  noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, noteSub->bitField0.stereoStrongRight);
     }
 
     return aList;

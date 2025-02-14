@@ -15,8 +15,10 @@
 #define ROUND_UP_8(v) (((v) + 7) & ~7)
 #define ROUND_DOWN_16(v) ((v) & ~0xf)
 
-#define DMEM_BUF_SIZE (0x1000)
+// #define DMEM_BUF_SIZE (0x1B90)
+#define DMEM_BUF_SIZE (0x1F00)
 // #define DMEM_BUF_SIZE 0xC90
+// dcampora: note: -0x450 because every location starts at 0x450
 #define BUF_U8(a) (rspa.buf.as_u8 + ((a)-0x450))
 #define BUF_S16(a) (rspa.buf.as_s16 + ((a)-0x450) / sizeof(int16_t))
 
@@ -127,17 +129,20 @@ void aSetBufferImpl(uint8_t flags, uint16_t in, uint16_t out, uint16_t nbytes) {
     rspa.nbytes = nbytes;
 }
 
-#if 1
-// old abi impl
-void aInterleaveImpl(uint16_t left, uint16_t right) {
-    if(rspa.nbytes == 0) { // Added
+void aInterleaveImpl(uint16_t left, uint16_t right, uint16_t center, uint16_t lfe, uint16_t surround_left, uint16_t surround_right) {
+    if (rspa.nbytes == 0) {
         return;
     }
 
     int count = ROUND_UP_16(rspa.nbytes) >> 3;
     int16_t *l = BUF_S16(left);
     int16_t *r = BUF_S16(right);
+    int16_t *c = BUF_S16(center);
+    int16_t *lf = BUF_S16(lfe);
+    int16_t *sl = BUF_S16(surround_left);
+    int16_t *sr = BUF_S16(surround_right);
     int16_t *d = BUF_S16(rspa.out);
+
     while (count > 0) {
         int16_t l0 = *l++;
         int16_t l1 = *l++;
@@ -155,59 +160,91 @@ void aInterleaveImpl(uint16_t left, uint16_t right) {
         int16_t r5 = *r++;
         int16_t r6 = *r++;
         int16_t r7 = *r++;
+        int16_t c0 = *c++;
+        int16_t c1 = *c++;
+        int16_t c2 = *c++;
+        int16_t c3 = *c++;
+        int16_t c4 = *c++;
+        int16_t c5 = *c++;
+        int16_t c6 = *c++;
+        int16_t c7 = *c++;
+        int16_t lf0 = *lf++;
+        int16_t lf1 = *lf++;
+        int16_t lf2 = *lf++;
+        int16_t lf3 = *lf++;
+        int16_t lf4 = *lf++;
+        int16_t lf5 = *lf++;
+        int16_t lf6 = *lf++;
+        int16_t lf7 = *lf++;
+        int16_t sl0 = *sl++;
+        int16_t sl1 = *sl++;
+        int16_t sl2 = *sl++;
+        int16_t sl3 = *sl++;
+        int16_t sl4 = *sl++;
+        int16_t sl5 = *sl++;
+        int16_t sl6 = *sl++;
+        int16_t sl7 = *sl++;
+        int16_t sr0 = *sr++;
+        int16_t sr1 = *sr++;
+        int16_t sr2 = *sr++;
+        int16_t sr3 = *sr++;
+        int16_t sr4 = *sr++;
+        int16_t sr5 = *sr++;
+        int16_t sr6 = *sr++;
+        int16_t sr7 = *sr++;
+
         *d++ = l0;
         *d++ = r0;
+        *d++ = c0;
+        *d++ = lf0;
+        *d++ = sl0;
+        *d++ = sr0;
         *d++ = l1;
         *d++ = r1;
+        *d++ = c1;
+        *d++ = lf1;
+        *d++ = sl1;
+        *d++ = sr1;
         *d++ = l2;
         *d++ = r2;
+        *d++ = c2;
+        *d++ = lf2;
+        *d++ = sl2;
+        *d++ = sr2;
         *d++ = l3;
         *d++ = r3;
+        *d++ = c3;
+        *d++ = lf3;
+        *d++ = sl3;
+        *d++ = sr3;
         *d++ = l4;
         *d++ = r4;
+        *d++ = c4;
+        *d++ = lf4;
+        *d++ = sl4;
+        *d++ = sr4;
         *d++ = l5;
         *d++ = r5;
+        *d++ = c5;
+        *d++ = lf5;
+        *d++ = sl5;
+        *d++ = sr5;
         *d++ = l6;
         *d++ = r6;
+        *d++ = c6;
+        *d++ = lf6;
+        *d++ = sl6;
+        *d++ = sr6;
         *d++ = l7;
         *d++ = r7;
+        *d++ = c7;
+        *d++ = lf7;
+        *d++ = sl7;
+        *d++ = sr7;
+
         --count;
     }
 }
-#else
-// new abi
-void aInterleaveImpl(uint16_t dest, uint16_t left, uint16_t right, uint16_t c) {
-    if(rspa.nbytes == 0){
-        return;
-    }
-
-    int count = ROUND_UP_16(rspa.nbytes) >> 3;
-
-    int16_t *l = BUF_S16(left);
-    int16_t *r = BUF_S16(right);
-    int16_t *d = BUF_S16(rspa.out);
-
-    while (count > 0) {
-        int16_t l0 = *l++;
-        int16_t l1 = *l++;
-        int16_t l2 = *l++;
-        int16_t l3 = *l++;
-        int16_t r0 = *r++;
-        int16_t r1 = *r++;
-        int16_t r2 = *r++;
-        int16_t r3 = *r++;
-        *d++ = l0;
-        *d++ = r0;
-        *d++ = l1;
-        *d++ = r1;
-        *d++ = l2;
-        *d++ = r2;
-        *d++ = l3;
-        *d++ = r3;
-        --count;
-    }
-}
-#endif
 
 void aDMEMMoveImpl(uint16_t in_addr, uint16_t out_addr, int nbytes) {
     nbytes = ROUND_UP_16(nbytes);
@@ -335,34 +372,61 @@ void aEnvSetup2Impl(uint16_t initial_vol_left, uint16_t initial_vol_right) {
 void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
 				   bool neg_3, bool neg_2,
                    bool neg_left, bool neg_right,
-                   int32_t wet_dry_addr, uint32_t unk)
+                   int32_t wet_dry_addr, uint32_t center)
 {
     int16_t *in = BUF_S16(in_addr);
-    int16_t *dry[2] = {BUF_S16(((wet_dry_addr >> 24) & 0xFF) << 4), BUF_S16(((wet_dry_addr >> 16) & 0xFF) << 4)};
-    int16_t *wet[2] = {BUF_S16(((wet_dry_addr >> 8) & 0xFF) << 4), BUF_S16(((wet_dry_addr) & 0xFF) << 4)};
-    int16_t negs[4] = {neg_left ? -1 : 0, neg_right ? -1 : 0, neg_3 ? -4 : 0, neg_2 ? -2 : 0};
-    int swapped[2] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1};
-    int n = ROUND_UP_16(n_samples);
+    // dcampora: TODO add rest of channels
+    // int16_t *dry[2] = {BUF_S16(((wet_dry_addr >> 24) & 0xFF) << 4), BUF_S16(((wet_dry_addr >> 16) & 0xFF) << 4)};
+    // int16_t *wet[2] = {BUF_S16(((wet_dry_addr >> 8) & 0xFF) << 4), BUF_S16(((wet_dry_addr) & 0xFF) << 4)};
+    
+    // Front speakers
+    // int16_t *dry[2] = {BUF_S16(0x990), BUF_S16(0xB10)};
+    // int16_t *wet[2] = {BUF_S16(0xA20), BUF_S16(0xA38)};
 
-    uint16_t vols[2] = {rspa.vol[0], rspa.vol[1]};
-    uint16_t rates[2] = {rspa.rate[0], rspa.rate[1]};
+    // Rear speakers + center
+    // int16_t *dry[3] = {BUF_S16(0x990 + 0x180 * 4), BUF_S16(0x990 + 0x180 * 5), BUF_S16(0x990 + 0x180 * 2)};
+    // int16_t *wet[3] = {BUF_S16(0xA20 + 0x180 * 4), BUF_S16(0xA20 + 0x180 * 5), BUF_S16(0xA20 + 0x180 * 2)};
+
+    // All speakers
+    int16_t *dry[6] = {BUF_S16(0x990), BUF_S16(0x990 + 0x180 * 1), BUF_S16(0x990 + 0x180 * 2), BUF_S16(0x990 + 0x180 * 3), BUF_S16(0x990 + 0x180 * 4), BUF_S16(0x990 + 0x180 * 5)};
+    int16_t *wet[6] = {BUF_S16(0xA20), BUF_S16(0xA20 + 0x180 * 1), BUF_S16(0xA20 + 0x180 * 2), BUF_S16(0xA20 + 0x180 * 3), BUF_S16(0xA20 + 0x180 * 4), BUF_S16(0xA20 + 0x180 * 5)};
+
+    int16_t negs[6] = {neg_left ? -1 : 0, neg_right ? -1 : 0, 0, 0, neg_left ? -1 : 0, neg_right ? -1 : 0};
+    int16_t negs_wet[6] = {neg_3 ? -4 : 0, neg_2 ? -2 : 0, 0, 0, neg_3 ? -4 : 0, neg_2 ? -2 : 0};
+    int swapped[6] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1, 2, 3, swap_reverb ? 5 : 4, swap_reverb ? 4 : 5};
+    int n = ROUND_UP_16(n_samples); // dcampora: samples are processed in groups of 16, called a "frame"
+
+    uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1]};
     uint16_t vol_wet = rspa.vol_wet;
-    uint16_t rate_wet = rspa.rate_wet;
 
     do {
         for (int i = 0; i < 8; i++) {
-            int16_t samples[2] = {*in, *in}; in++;
-            for (int j = 0; j < 2; j++) {
+            int16_t samples[6] = {0, 0, 0, 0, 0, 0};
+            if (center) {
+                samples[2] = *in;
+            } else {
+                // samples[4] = *in;
+                // samples[5] = *in;
+            }
+            in++;
+
+            // int16_t samples[6] = {*in, *in, *in, *in, *in, *in}; in++;
+            for (int j = 0; j < 3; j++) {
                 samples[j] = (samples[j] * vols[j] >> 16) ^ negs[j];
             }
-        	for (int j = 0; j < 2; j++) {
+        	for (int j = 0; j < 3; j++) {
                 *dry[j] = clamp16(*dry[j] + samples[j]); dry[j]++;
-                *wet[j] = clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs[2 + j])); wet[j]++;
+                *wet[j] = clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs_wet[j])); wet[j]++;
             }
         }
-        vols[0] += rates[0];
-        vols[1] += rates[1];
-        vol_wet += rate_wet;
+
+        vols[0] += rspa.rate[0];
+        vols[1] += rspa.rate[1];
+        vols[2] += rspa.rate[0];
+        vols[3] += rspa.rate[1];
+        vols[4] += rspa.rate[0];
+        vols[5] += rspa.rate[1];
+        vol_wet += rspa.rate_wet;
 
         n -= 8;
     } while (n > 0);

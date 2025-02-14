@@ -282,7 +282,7 @@ void GameEngine::StartFrame() const {
 
 #endif
 
-#define NUM_AUDIO_CHANNELS 2
+#define NUM_AUDIO_CHANNELS 6
 
 extern "C" u16 audBuffer = 0;
 #include <sf64audio_provisional.h>
@@ -336,6 +336,7 @@ void GameEngine::HandleAudioThread() {
 #endif
         AudioPlayerPlayFrame((u8*) audio_buffer,
                              num_audio_samples * (sizeof(int16_t) * NUM_AUDIO_CHANNELS * AUDIO_FRAMES_PER_UPDATE));
+        
         audio.processing = false;
         audio.cv_from_thread.notify_one();
     }

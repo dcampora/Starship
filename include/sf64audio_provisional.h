@@ -52,10 +52,12 @@ typedef void (*AudioCustomUpdateFunction)(void);
 // Samples are processed in groups of 16 called a "frame"
 #define SAMPLES_PER_FRAME ADPCMFSIZE
 
-// The length of one left/right channel is 12 frames
+// The length of one channel is 12 frames
 #define DMEM_1CH_SIZE (12 * SAMPLES_PER_FRAME * SAMPLE_SIZE)
 // Both left and right channels
 #define DMEM_2CH_SIZE (2 * DMEM_1CH_SIZE)
+// 6 channels
+#define DMEM_6CH_SIZE (6 * DMEM_1CH_SIZE)
 
 #define AIBUF_LEN (170 * SAMPLES_PER_FRAME)  // number of samples
 #define AIBUF_SIZE (AIBUF_LEN * SAMPLE_SIZE) // number of bytes
