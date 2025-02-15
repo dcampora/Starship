@@ -409,11 +409,24 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
 
     uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1]};
     uint16_t rates[6] = {rspa.rate[0], rspa.rate[1], rspa.rate[0], rspa.rate[1], rspa.rate[0], rspa.rate[1]};
-    bool enable[6] = {0, 0, 0, 0, 1, 1};
+    bool enable[6] = {0, 0, 1, 0, 1, 1};
 
     do {
         for (int i = 0; i < 8; i++) {
-            int16_t samples[6] = {*in, *in, *in, *in, *in, *in}; in++;
+            int16_t samples[6] = {0};
+            
+            if (center) {
+                samples[2] = *in;
+                samples[3] = *in;
+            } else {
+                samples[0] = *in;
+                samples[1] = *in;
+                samples[3] = *in;
+                samples[4] = *in;
+                samples[5] = *in;
+            }
+            in++;
+
             for (int j = 0; j < 6; j++) {
                 samples[j] = (samples[j] * vols[j] >> 16) ^ negs[j];
             }

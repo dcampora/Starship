@@ -443,6 +443,9 @@ void AudioThread_ProcessCmds(u32 msg) {
                         case AUDIOCMD_OP_CHANNEL_SET_MUTE:
                             channel->muted = cmd->asSbyte;
                             break;
+                        case AUDIOCMD_OP_CHANNEL_SET_STEREO:
+                            channel->center = 1;
+                            break;
                     }
                 }
             }

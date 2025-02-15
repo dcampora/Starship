@@ -60,6 +60,9 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
     reverb = noteAttr->reverb;
     stereo = noteAttr->stereo;
     pan %= ARRAY_COUNTU(gHeadsetPanVolume);
+    
+    noteSub->bitField0.center = stereo.s.center;
+
     if ((noteSub->bitField0.stereoHeadsetEffects) && (gAudioSoundMode == SOUNDMODE_HEADSET)) {
         var_a0 = pan >> 1;
         if (var_a0 >= ARRAY_COUNT(gHaasEffectDelaySizes)) {
@@ -126,11 +129,6 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
     noteSub->gain = noteAttr->gain;
     if (noteSub->reverb != reverb) {
         noteSub->reverb = reverb;
-        noteSub->bitField0.unused = true;
-    } else if (noteSub->bitField0.needsInit) {
-        noteSub->bitField0.unused = true;
-    } else {
-        noteSub->bitField0.unused = false;
     }
 }
 
@@ -331,6 +329,7 @@ void Audio_ProcessNotes(void) {
                 sp70.velocity = attr->velocity;
                 sp70.pan = attr->pan;
                 sp70.reverb = attr->reverb;
+                // printf("setting note attrs\n");
                 sp70.stereo = attr->stereo;
                 sp70.gain = attr->gain;
                 bookOffset = noteSub->bitField1.bookOffset;
@@ -339,6 +338,12 @@ void Audio_ProcessNotes(void) {
                 sp70.velocity = playbackState->parentLayer->noteVelocity;
                 sp70.pan = playbackState->parentLayer->notePan;
                 sp70.stereo = playbackState->parentLayer->stereo;
+                
+                sp70.stereo.s.center = playbackState->parentLayer->channel->center;
+                // if (sp70.stereo.s.center) {
+                //     printf("setting note attrs 2 center\n");
+                // }
+
                 sp70.reverb = playbackState->parentLayer->channel->targetReverbVol;
                 sp70.gain = playbackState->parentLayer->channel->reverbIndex;
 

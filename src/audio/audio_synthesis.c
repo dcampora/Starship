@@ -703,7 +703,7 @@ Acmd* AudioSynth_Update(Acmd* aList, s32* cmdCount, s16* aiBufStart, s32 aiBufLe
         aCmdPtr =
             AudioSynth_DoOneAudioUpdate((s16*) aiBufPtr, chunkLen, aCmdPtr, gAudioBufferParams.ticksPerUpdate - i);
         aiBufLen -= chunkLen;
-        aiBufPtr += chunkLen * 6; // Update to handle 6 channels
+        aiBufPtr += chunkLen * NUM_AUDIO_CHANNELS;
     }
 
     for (j = 0; j < gNumSynthReverbs; j++) {
@@ -1350,17 +1350,17 @@ Acmd* AudioSynth_ProcessEnvelope(Acmd* aList, NoteSubEu* noteSub, NoteSynthesisS
         switch (delaySide) {
             case HAAS_EFFECT_DELAY_LEFT:
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x65B1C9E1, noteSub->bitField0.stereoStrongRight);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x65B1C9E1, noteSub->bitField0.center);
                 break;
 
             case HAAS_EFFECT_DELAY_RIGHT:
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x9965C9E1, noteSub->bitField0.stereoStrongRight);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x9965C9E1, noteSub->bitField0.center);
                 break;
 
             default: // HAAS_EFFECT_DELAY_NONE
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, noteSub->bitField0.stereoStrongRight);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, noteSub->bitField0.center);
                 break;
         }
     } else {
@@ -1368,7 +1368,7 @@ Acmd* AudioSynth_ProcessEnvelope(Acmd* aList, NoteSubEu* noteSub, NoteSynthesisS
         aEnvSetup1(aList++, (sourceReverbVol & 0x7F), rampReverb, rampLeft, rampRight);
         aEnvSetup2(aList++, curVolLeft, curVolRight);
         aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                  noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, noteSub->bitField0.stereoStrongRight);
+                  noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, noteSub->bitField0.center);
     }
 
     return aList;

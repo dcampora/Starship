@@ -88,7 +88,7 @@ void AudioSeq_InitSequenceChannel(SequenceChannel* channel) {
     for (i = 0; i < 8; i++) {
         channel->seqScriptIO[i] = -1;
     }
-    channel->unused = 0;
+    channel->center = 0;
     Audio_InitNoteLists(&channel->notePool);
 }
 
@@ -195,6 +195,12 @@ void AudioSeq_SequencePlayerSetupChannels(SequencePlayer* seqPlayer, u16 channel
                 seqPlayer->channels[i] = channel;
             } else {
                 AudioSeq_InitSequenceChannel(channel);
+                
+                // Set center flag for channel 15 (VOICE)
+                if (i == 15) {
+                    channel->center = 1;
+                }
+
                 seqPlayer->channels[i] = channel;
                 channel->seqPlayer = seqPlayer;
                 channel->fontId = seqPlayer->defaultFont;

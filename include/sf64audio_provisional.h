@@ -404,7 +404,7 @@ typedef struct {
 typedef struct {
     /* 0x00 */ u8 stereoHeadsetEffects : 1;
     /* 0x00 */ u8 usesHeadsetPanEffects : 1;
-    /* 0x00 */ u8 unused : 2;
+    /* 0x00 */ u8 center : 2;
     /* 0x00 */ u8 bit2 : 2;
     /* 0x00 */ u8 strongRight : 1;
     /* 0x00 */ u8 strongLeft : 1;
@@ -433,7 +433,7 @@ typedef struct SequenceChannel {
     /* 0x00 */ u8 hasInstrument : 1;
     /* 0x00 */ u8 stereoHeadsetEffects : 1;
     /* 0x00 */ u8 largeNotes : 1; // notes specify duration and velocity
-    /* 0x00 */ u8 unused : 1;
+    /* 0x00 */ u8 center : 1;
     union {
         struct {
             /* 0x01 */ u8 freqMod : 1;
@@ -595,7 +595,7 @@ typedef struct {
         /* 0x00 */ volatile u8 enabled : 1;
         /* 0x00 */ u8 needsInit : 1;
         /* 0x00 */ u8 finished : 1; // ?
-        /* 0x00 */ u8 unused : 1;
+        /* 0x00 */ u8 center : 1;
         /* 0x00 */ u8 stereoStrongRight : 1;
         /* 0x00 */ u8 stereoStrongLeft : 1;
         /* 0x00 */ u8 stereoHeadsetEffects : 1;
