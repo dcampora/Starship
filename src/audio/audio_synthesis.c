@@ -842,10 +842,12 @@ Acmd* AudioSynth_DoOneAudioUpdate(s16* aiBuf, s32 aiBufLen, Acmd* aList, s32 upd
         j++;
     }
 
-    j = aiBufLen * 6;
+    j = aiBufLen * 2;
+    // Set rsp output buffer to DMEM_TEMP with size j
     aSetBuffer(aList++, 0, 0, DMEM_TEMP, j);
     aInterleave(aList++, DMEM_LEFT_CH, DMEM_RIGHT_CH, DMEM_CENTER_CH, DMEM_SUBWOOFER_CH, DMEM_REAR_LEFT_CH, DMEM_REAR_RIGHT_CH);
-    aSaveBuffer(aList++, DMEM_TEMP, OS_K0_TO_PHYSICAL(aiBuf), j * 6);
+    // Copy j bytes from DMEM_TEMP to aiBuf
+    aSaveBuffer(aList++, DMEM_TEMP, OS_K0_TO_PHYSICAL(aiBuf), j * NUM_AUDIO_CHANNELS);
 
     return aList;
 }

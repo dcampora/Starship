@@ -15,8 +15,8 @@
 #define ROUND_UP_8(v) (((v) + 7) & ~7)
 #define ROUND_DOWN_16(v) ((v) & ~0xf)
 
-// #define DMEM_BUF_SIZE (0x1B90)
-#define DMEM_BUF_SIZE (0x1F00)
+#define DMEM_BUF_SIZE (0x1B90) // 7056 B
+// #define DMEM_BUF_SIZE (0x1F00)
 // #define DMEM_BUF_SIZE 0xC90
 // dcampora: note: -0x450 because every location starts at 0x450
 #define BUF_U8(a) (rspa.buf.as_u8 + ((a)-0x450))
@@ -413,13 +413,13 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
 
     do {
         for (int i = 0; i < 8; i++) {
-            int16_t samples[6] = {0, 0, 0, 0, *in, *in}; in++;
+            int16_t samples[6] = {*in, *in, *in, *in, *in, *in}; in++;
             for (int j = 0; j < 6; j++) {
                 samples[j] = (samples[j] * vols[j] >> 16) ^ negs[j];
             }
         	for (int j = 0; j < 6; j++) {
                 *dry[j] = enable[j] * clamp16(*dry[j] + samples[j]); dry[j]++;
-                *wet[j] = enable[j] * clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs[2 + j])); wet[j]++;
+                *wet[j] = enable[j] * clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs_wet[j])); wet[j]++;
             }
         }
 
