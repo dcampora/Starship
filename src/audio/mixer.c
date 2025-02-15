@@ -375,6 +375,17 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
                    int32_t wet_dry_addr, uint32_t center)
 {
     int16_t *in = BUF_S16(in_addr);
+    // int16_t *dry[2] = {BUF_S16(((wet_dry_addr >> 24) & 0xFF) << 4), BUF_S16(((wet_dry_addr >> 16) & 0xFF) << 4)};
+    // int16_t *wet[2] = {BUF_S16(((wet_dry_addr >> 8) & 0xFF) << 4), BUF_S16(((wet_dry_addr) & 0xFF) << 4)};
+    // int16_t negs[4] = {neg_left ? -1 : 0, neg_right ? -1 : 0, neg_3 ? -4 : 0, neg_2 ? -2 : 0};
+    // int swapped[2] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1};
+    int n = ROUND_UP_16(n_samples);
+
+    // uint16_t vols[2] = {rspa.vol[0], rspa.vol[1]};
+    // uint16_t rates[2] = {rspa.rate[0], rspa.rate[1]};
+    uint16_t rate_wet = rspa.rate_wet;
+    uint16_t vol_wet = rspa.vol_wet;
+
     // dcampora: TODO add rest of channels
     // int16_t *dry[2] = {BUF_S16(((wet_dry_addr >> 24) & 0xFF) << 4), BUF_S16(((wet_dry_addr >> 16) & 0xFF) << 4)};
     // int16_t *wet[2] = {BUF_S16(((wet_dry_addr >> 8) & 0xFF) << 4), BUF_S16(((wet_dry_addr) & 0xFF) << 4)};
@@ -394,39 +405,28 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
     int16_t negs[6] = {neg_left ? -1 : 0, neg_right ? -1 : 0, 0, 0, neg_left ? -1 : 0, neg_right ? -1 : 0};
     int16_t negs_wet[6] = {neg_3 ? -4 : 0, neg_2 ? -2 : 0, 0, 0, neg_3 ? -4 : 0, neg_2 ? -2 : 0};
     int swapped[6] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1, 2, 3, swap_reverb ? 5 : 4, swap_reverb ? 4 : 5};
-    int n = ROUND_UP_16(n_samples); // dcampora: samples are processed in groups of 16, called a "frame"
+    // int n = ROUND_UP_16(n_samples); // dcampora: samples are processed in groups of 16, called a "frame"
 
     uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1]};
-    uint16_t vol_wet = rspa.vol_wet;
+    uint16_t rates[6] = {rspa.rate[0], rspa.rate[1], rspa.rate[0], rspa.rate[1], rspa.rate[0], rspa.rate[1]};
+    bool enable[6] = {0, 0, 0, 0, 1, 1};
 
     do {
         for (int i = 0; i < 8; i++) {
-            int16_t samples[6] = {0, 0, 0, 0, 0, 0};
-            if (center) {
-                samples[2] = *in;
-            } else {
-                // samples[4] = *in;
-                // samples[5] = *in;
-            }
-            in++;
-
-            // int16_t samples[6] = {*in, *in, *in, *in, *in, *in}; in++;
-            for (int j = 0; j < 3; j++) {
+            int16_t samples[6] = {0, 0, 0, 0, *in, *in}; in++;
+            for (int j = 0; j < 6; j++) {
                 samples[j] = (samples[j] * vols[j] >> 16) ^ negs[j];
             }
-        	for (int j = 0; j < 3; j++) {
-                *dry[j] = clamp16(*dry[j] + samples[j]); dry[j]++;
-                *wet[j] = clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs_wet[j])); wet[j]++;
+        	for (int j = 0; j < 6; j++) {
+                *dry[j] = enable[j] * clamp16(*dry[j] + samples[j]); dry[j]++;
+                *wet[j] = enable[j] * clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs[2 + j])); wet[j]++;
             }
         }
 
-        vols[0] += rspa.rate[0];
-        vols[1] += rspa.rate[1];
-        vols[2] += rspa.rate[0];
-        vols[3] += rspa.rate[1];
-        vols[4] += rspa.rate[0];
-        vols[5] += rspa.rate[1];
-        vol_wet += rspa.rate_wet;
+        for (int i = 0; i < 6; i++) {
+            vols[i] += rates[i];
+        }
+        vol_wet += rate_wet;
 
         n -= 8;
     } while (n > 0);

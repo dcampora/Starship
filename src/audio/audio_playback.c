@@ -74,7 +74,6 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
         panVolumeLeft = gHeadsetPanVolume[pan];
         pamVolumeRight = gHeadsetPanVolume[ARRAY_COUNT(gHeadsetPanVolume) - 1 - pan];
     } else if (noteSub->bitField0.stereoHeadsetEffects && (gAudioSoundMode == SOUNDMODE_STEREO)) {
-        // printf("stereo headset effects\n");
         noteSub->leftDelaySize = 0;
         noteSub->rightDelaySize = 0;
         noteSub->bitField0.usesHeadsetPanEffects = false;
@@ -90,7 +89,6 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
         }
         noteSub->bitField0.stereoStrongRight = strongRight;
         noteSub->bitField0.stereoStrongLeft = strongLeft;
-        // noteSub->bitField0.center = stereo.s.center;
         switch (stereo.s.bit2) {
             case 0:
                 noteSub->bitField0.stereoStrongRight = stereo.s.strongRight;

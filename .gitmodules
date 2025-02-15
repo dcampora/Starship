@@ -7,6 +7,3 @@
 [submodule "libultraship"]
 	path = libultraship
 	url = https://github.com/Kenix3/libultraship.git
-[submodule "tools/SDL3"]
-	path = tools/SDL3
-	url = https://github.com/libsdl-org/SDL.git
