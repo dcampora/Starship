@@ -312,6 +312,7 @@ void GameEngine::HandleAudioThread() {
         // gVIsPerFrame = 2;
 
 #define AUDIO_FRAMES_PER_UPDATE (gVIsPerFrame > 0 ? gVIsPerFrame : 1)
+#define MAX_AUDIO_FRAMES_PER_UPDATE 3 // Compile-time constant with max value of gVIsPerFrame
 
         std::unique_lock<std::mutex> Lock(audio.mutex);
         int samples_left = AudioPlayerBuffered();
@@ -322,8 +323,8 @@ void GameEngine::HandleAudioThread() {
         if (frames > 60) {
             countermin++;
         }
-
-        s16 audio_buffer[SAMPLES_HIGH * NUM_AUDIO_CHANNELS * 3] = { 0 };
+        
+        s16 audio_buffer[SAMPLES_HIGH * NUM_AUDIO_CHANNELS * MAX_AUDIO_FRAMES_PER_UPDATE] = { 0 };
         for (int i = 0; i < AUDIO_FRAMES_PER_UPDATE; i++) {
             AudioThread_CreateNextAudioBuffer(audio_buffer + i * (num_audio_samples * NUM_AUDIO_CHANNELS),
                                               num_audio_samples);

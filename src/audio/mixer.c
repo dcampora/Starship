@@ -16,11 +16,9 @@
 #define ROUND_DOWN_16(v) ((v) & ~0xf)
 
 #define DMEM_BUF_SIZE (0x1B90) // 7056 B
-// #define DMEM_BUF_SIZE (0x1F00)
-// #define DMEM_BUF_SIZE 0xC90
 // dcampora: note: -0x450 because every location starts at 0x450
-#define BUF_U8(a) (rspa.buf.as_u8 + ((a)-0x450))
-#define BUF_S16(a) (rspa.buf.as_s16 + ((a)-0x450) / sizeof(int16_t))
+#define BUF_U8(a) (rspa.buf + ((a)-0x450))
+#define BUF_S16(a) (int16_t*) BUF_U8(a)
 
 static struct {
     uint16_t in;
@@ -39,10 +37,7 @@ static struct {
     uint16_t filter_count;
     int16_t filter[8];
 
-    union {
-        int16_t as_s16[DMEM_BUF_SIZE / sizeof(int16_t)];
-        uint8_t as_u8[DMEM_BUF_SIZE];
-    } buf;
+    uint8_t buf[DMEM_BUF_SIZE];
 } rspa;
 
 static int16_t resample_table[64][4] = {
@@ -134,7 +129,7 @@ void aInterleaveImpl(uint16_t left, uint16_t right, uint16_t center, uint16_t lf
         return;
     }
 
-    int count = ROUND_UP_16(rspa.nbytes) >> 3;
+    int count = rspa.nbytes / (6 * 8 * sizeof(int16_t));
     int16_t *l = BUF_S16(left);
     int16_t *r = BUF_S16(right);
     int16_t *c = BUF_S16(center);
@@ -279,19 +274,19 @@ void aADPCMdecImpl(uint8_t flags, ADPCM_STATE state) {
             int16_t prev1 = out[-1];
             int16_t prev2 = out[-2];
             int j, k;
-			if (flags & 4) {
-				for (j = 0; j < 2; j++) {
-					ins[j * 4] = (((*in >> 6) << 30) >> 30) << shift;
-					ins[j * 4 + 1] = ((((*in >> 4) & 0x3) << 30) >> 30) << shift;
-					ins[j * 4 + 2] = ((((*in >> 2) & 0x3) << 30) >> 30) << shift;
-					ins[j * 4 + 3] = (((*in++ & 0x3) << 30) >> 30) << shift;
-				}
-			} else {
-				for (j = 0; j < 4; j++) {
-					ins[j * 2] = (((*in >> 4) << 28) >> 28) << shift;
-					ins[j * 2 + 1] = (((*in++ & 0xf) << 28) >> 28) << shift;
-				}
-			}
+            if (flags & 4) {
+                for (j = 0; j < 2; j++) {
+                    ins[j * 4] = (((*in >> 6) << 30) >> 30) << shift;
+                    ins[j * 4 + 1] = ((((*in >> 4) & 0x3) << 30) >> 30) << shift;
+                    ins[j * 4 + 2] = ((((*in >> 2) & 0x3) << 30) >> 30) << shift;
+                    ins[j * 4 + 3] = (((*in++ & 0x3) << 30) >> 30) << shift;
+                }
+            } else {
+                for (j = 0; j < 4; j++) {
+                    ins[j * 2] = (((*in >> 4) << 28) >> 28) << shift;
+                    ins[j * 2 + 1] = (((*in++ & 0xf) << 28) >> 28) << shift;
+                }
+            }
             for (j = 0; j < 8; j++) {
                 int32_t acc = tbl[0][j] * prev2 + tbl[1][j] * prev1 + (ins[j] << 11);
                 for (k = 0; k < j; k++) {
@@ -375,28 +370,10 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
                    int32_t wet_dry_addr, uint32_t center)
 {
     int16_t *in = BUF_S16(in_addr);
-    // int16_t *dry[2] = {BUF_S16(((wet_dry_addr >> 24) & 0xFF) << 4), BUF_S16(((wet_dry_addr >> 16) & 0xFF) << 4)};
-    // int16_t *wet[2] = {BUF_S16(((wet_dry_addr >> 8) & 0xFF) << 4), BUF_S16(((wet_dry_addr) & 0xFF) << 4)};
-    // int16_t negs[4] = {neg_left ? -1 : 0, neg_right ? -1 : 0, neg_3 ? -4 : 0, neg_2 ? -2 : 0};
-    // int swapped[2] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1};
     int n = ROUND_UP_16(n_samples);
 
-    // uint16_t vols[2] = {rspa.vol[0], rspa.vol[1]};
-    // uint16_t rates[2] = {rspa.rate[0], rspa.rate[1]};
     uint16_t rate_wet = rspa.rate_wet;
     uint16_t vol_wet = rspa.vol_wet;
-
-    // dcampora: TODO add rest of channels
-    // int16_t *dry[2] = {BUF_S16(((wet_dry_addr >> 24) & 0xFF) << 4), BUF_S16(((wet_dry_addr >> 16) & 0xFF) << 4)};
-    // int16_t *wet[2] = {BUF_S16(((wet_dry_addr >> 8) & 0xFF) << 4), BUF_S16(((wet_dry_addr) & 0xFF) << 4)};
-    
-    // Front speakers
-    // int16_t *dry[2] = {BUF_S16(0x990), BUF_S16(0xB10)};
-    // int16_t *wet[2] = {BUF_S16(0xA20), BUF_S16(0xA38)};
-
-    // Rear speakers + center
-    // int16_t *dry[3] = {BUF_S16(0x990 + 0x180 * 4), BUF_S16(0x990 + 0x180 * 5), BUF_S16(0x990 + 0x180 * 2)};
-    // int16_t *wet[3] = {BUF_S16(0xA20 + 0x180 * 4), BUF_S16(0xA20 + 0x180 * 5), BUF_S16(0xA20 + 0x180 * 2)};
 
     // All speakers
     int16_t *dry[6] = {BUF_S16(0x990), BUF_S16(0x990 + 0x180 * 1), BUF_S16(0x990 + 0x180 * 2), BUF_S16(0x990 + 0x180 * 3), BUF_S16(0x990 + 0x180 * 4), BUF_S16(0x990 + 0x180 * 5)};
@@ -405,11 +382,9 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
     int16_t negs[6] = {neg_left ? -1 : 0, neg_right ? -1 : 0, 0, 0, neg_left ? -1 : 0, neg_right ? -1 : 0};
     int16_t negs_wet[6] = {neg_3 ? -4 : 0, neg_2 ? -2 : 0, 0, 0, neg_3 ? -4 : 0, neg_2 ? -2 : 0};
     int swapped[6] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1, 2, 3, swap_reverb ? 5 : 4, swap_reverb ? 4 : 5};
-    // int n = ROUND_UP_16(n_samples); // dcampora: samples are processed in groups of 16, called a "frame"
 
     uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1]};
     uint16_t rates[6] = {rspa.rate[0], rspa.rate[1], rspa.rate[0], rspa.rate[1], rspa.rate[0], rspa.rate[1]};
-    bool enable[6] = {0, 0, 1, 0, 1, 1};
 
     do {
         for (int i = 0; i < 8; i++) {
@@ -417,11 +392,12 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
             
             if (center) {
                 samples[2] = *in;
-                samples[3] = *in;
-            } else {
+                // samples[3] = *in;
+            }
+            else {
                 samples[0] = *in;
                 samples[1] = *in;
-                samples[3] = *in;
+                // samples[3] = *in;
                 samples[4] = *in;
                 samples[5] = *in;
             }
@@ -431,8 +407,8 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
                 samples[j] = (samples[j] * vols[j] >> 16) ^ negs[j];
             }
         	for (int j = 0; j < 6; j++) {
-                *dry[j] = enable[j] * clamp16(*dry[j] + samples[j]); dry[j]++;
-                *wet[j] = enable[j] * clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs_wet[j])); wet[j]++;
+                *dry[j] = clamp16(*dry[j] + samples[j]); dry[j]++;
+                *wet[j] = clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs_wet[j])); wet[j]++;
             }
         }
 
