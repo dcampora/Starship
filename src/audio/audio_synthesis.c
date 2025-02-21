@@ -922,6 +922,10 @@ Acmd* AudioSynth_ProcessNote(s32 noteIndex, NoteSubEu* noteSub, NoteSynthesisSta
         synthState->samplePosFrac = 0;
         synthState->curVolLeft = 0;
         synthState->curVolRight = 0;
+        synthState->curVolCenter = 0;
+        synthState->curVolLfe = 0;
+        synthState->curVolRLeft = 0;
+        synthState->curVolRRight = 0;
         synthState->numParts = synthState->prevHaasEffectRightDelaySize = synthState->prevHaasEffectLeftDelaySize = 0;
         note->noteSubEu.bitField0.finished = 0;
     }
@@ -1304,75 +1308,86 @@ Acmd* AudioSynth_FinalResample(Acmd* aList, NoteSynthesisState* synthState, s32 
 Acmd* AudioSynth_ProcessEnvelope(Acmd* aList, NoteSubEu* noteSub, NoteSynthesisState* synthState, s32 aiBufLen,
                                  u16 dmemSrc, s32 delaySide, s32 flags) {
     s16 rampReverb;
-    s16 rampRight;
-    s16 rampLeft;
-    u16 panVolLeft;
-    u16 panVolRight;
-    u16 curVolLeft;
-    u16 curVolRight;
+    s16 rampRight = 0, rampLeft = 0, rampCenter = 0, rampLfe = 0, rampRLeft = 0, rampRRight = 0;
+    u16 panVolLeft, panVolRight, panVolCenter, panVolLfe, panVolRLeft, panVolRRight;
+    u16 curVolLeft, curVolRight, curVolCenter, curVolLfe, curVolRLeft, curVolRRight;
     s32 sourceReverbVol;
     s32 temp = 0;
 
     curVolLeft = synthState->curVolLeft;
     curVolRight = synthState->curVolRight;
+    curVolCenter = synthState->curVolCenter;
+    curVolLfe = synthState->curVolLfe;
+    curVolRLeft = synthState->curVolRLeft;
+    curVolRRight = synthState->curVolRRight;
 
-    panVolLeft = noteSub->panVolLeft;
-    panVolRight = noteSub->panVolRight;
+    panVolLeft = 16 * noteSub->panVolLeft;
+    panVolRight = 16 * noteSub->panVolRight;
+    panVolCenter = 16 * noteSub->panVolCenter;
+    panVolLfe = 16 * noteSub->panVolLfe;
+    panVolRLeft = 16 * noteSub->panVolRLeft;
+    panVolRRight = 16 * noteSub->panVolRRight;
 
-    panVolLeft <<= 4;
-    panVolRight <<= 4;
-
+    s32 aiBufLenSmall = aiBufLen >> 3;
     if (panVolLeft != curVolLeft) {
-        rampLeft = (panVolLeft - curVolLeft) / (aiBufLen >> 3);
-    } else {
-        rampLeft = 0;
+        rampLeft = (panVolLeft - curVolLeft) / aiBufLenSmall;
     }
     if (panVolRight != curVolRight) {
-        rampRight = (panVolRight - curVolRight) / (aiBufLen >> 3);
-    } else {
-        rampRight = 0;
+        rampRight = (panVolRight - curVolRight) / aiBufLenSmall;
+    }
+    if (panVolRLeft != curVolRLeft) {
+        rampRLeft = (panVolRLeft - curVolRLeft) / aiBufLenSmall;
+    }
+    if (panVolRRight != curVolRRight) {
+        rampRRight = (panVolRRight - curVolRRight) / aiBufLenSmall;
+    }
+    if (panVolCenter != curVolCenter) {
+        rampCenter = (panVolCenter - curVolCenter) / aiBufLenSmall;
     }
 
     sourceReverbVol = synthState->reverbVol;
 
     if (noteSub->reverb != sourceReverbVol) {
         temp = (((noteSub->reverb & 0x7F) - (sourceReverbVol & 0x7F)) << 8);
-        rampReverb = temp / (aiBufLen >> 3);
+        rampReverb = temp / aiBufLenSmall;
         synthState->reverbVol = noteSub->reverb;
     } else {
         rampReverb = 0;
     }
 
-    synthState->curVolLeft = curVolLeft + (rampLeft * (aiBufLen >> 3));
-    synthState->curVolRight = curVolRight + (rampRight * (aiBufLen >> 3));
+    synthState->curVolLeft = curVolLeft + (rampLeft * aiBufLenSmall);
+    synthState->curVolRight = curVolRight + (rampRight * aiBufLenSmall);
+    synthState->curVolCenter = curVolCenter + (rampCenter * aiBufLenSmall);
+    synthState->curVolLfe = curVolLfe + (rampLfe * aiBufLenSmall);
+    synthState->curVolRLeft = curVolRLeft + (rampRLeft * aiBufLenSmall);
+    synthState->curVolRRight = curVolRRight + (rampRRight * aiBufLenSmall);
 
     if (noteSub->bitField0.usesHeadsetPanEffects) {
         aClearBuffer(aList++, DMEM_HAAS_TEMP, DMEM_1CH_SIZE);
-        aEnvSetup1(aList++, (sourceReverbVol & 0x7F), rampReverb, rampLeft, rampRight);
-        aEnvSetup2(aList++, curVolLeft, curVolRight);
+        aEnvSetup1(aList++, (sourceReverbVol & 0x7F), rampReverb, rampLeft, rampRight, rampCenter, rampLfe, rampRLeft, rampRRight);
+        aEnvSetup2(aList++, curVolLeft, curVolRight, curVolCenter, curVolLfe, curVolRLeft, curVolRRight);
 
         switch (delaySide) {
             case HAAS_EFFECT_DELAY_LEFT:
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x65B1C9E1, noteSub->bitField0.center);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x65B1C9E1, 0);
                 break;
 
             case HAAS_EFFECT_DELAY_RIGHT:
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x9965C9E1, noteSub->bitField0.center);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x9965C9E1, 0);
                 break;
 
             default: // HAAS_EFFECT_DELAY_NONE
                 aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, noteSub->bitField0.center);
+                          noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, 0);
                 break;
         }
     } else {
-        // dcampora: TODO
-        aEnvSetup1(aList++, (sourceReverbVol & 0x7F), rampReverb, rampLeft, rampRight);
-        aEnvSetup2(aList++, curVolLeft, curVolRight);
+        aEnvSetup1(aList++, (sourceReverbVol & 0x7F), rampReverb, rampLeft, rampRight, rampCenter, rampLfe, rampRLeft, rampRRight);
+        aEnvSetup2(aList++, curVolLeft, curVolRight, curVolCenter, curVolLfe, curVolRLeft, curVolRRight);
         aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                  noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, noteSub->bitField0.center);
+                  noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, 0);
     }
 
     return aList;

@@ -42,8 +42,10 @@ void aDMEMMoveImpl(uint16_t in_addr, uint16_t out_addr, int nbytes);
 void aSetLoopImpl(ADPCM_STATE* adpcm_loop_state);
 void aADPCMdecImpl(uint8_t flags, ADPCM_STATE state);
 void aResampleImpl(uint8_t flags, uint16_t pitch, RESAMPLE_STATE state);
-void aEnvSetup1Impl(uint8_t initial_vol_wet, uint16_t rate_wet, uint16_t rate_left, uint16_t rate_right);
-void aEnvSetup2Impl(uint16_t initial_vol_left, uint16_t initial_vol_right);
+void aEnvSetup1Impl(uint8_t initial_vol_wet, uint16_t rate_wet, uint16_t rate_left, uint16_t rate_right,
+    uint16_t rate_center, uint16_t rate_lfe, uint16_t rate_rear_left, uint16_t rate_rear_right);
+void aEnvSetup2Impl(uint16_t initial_vol_left, uint16_t initial_vol_right, int16_t initial_vol_center,
+    int16_t initial_vol_lfe, int16_t initial_vol_rear_left, int16_t initial_vol_rear_right);
 void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb, bool neg_3, bool neg_2, bool neg_left,
                    bool neg_right, int32_t wet_dry_addr, u32 unk);
 void aMixImpl(uint16_t count, int16_t gain, uint16_t in_addr, uint16_t out_addr);
@@ -70,9 +72,10 @@ void aUnkCmd19Impl(uint8_t f, uint16_t count, uint16_t out_addr, uint16_t in_add
 #define aSetLoop(pkt, a) aSetLoopImpl(a)
 #define aADPCMdec(pkt, f, s) aADPCMdecImpl(f, s)
 #define aResample(pkt, f, p, s) aResampleImpl(f, p, s)
-#define aEnvSetup1(pkt, initialVolReverb, rampReverb, rampLeft, rampRight) \
-    aEnvSetup1Impl(initialVolReverb, rampReverb, rampLeft, rampRight)
-#define aEnvSetup2(pkt, initialVolLeft, initialVolRight) aEnvSetup2Impl(initialVolLeft, initialVolRight)
+#define aEnvSetup1(pkt, initialVolReverb, rampReverb, rampLeft, rampRight, rampCenter, rampLfe, rampRLeft, rampRRight) \
+    aEnvSetup1Impl(initialVolReverb, rampReverb, rampLeft, rampRight, rampCenter, rampLfe, rampRLeft, rampRRight)
+#define aEnvSetup2(pkt, initialVolLeft, initialVolRight, initialVolCenter, initialVolLfe, initialVolRLeft, initialVolRRight) \
+    aEnvSetup2Impl(initialVolLeft, initialVolRight, initialVolCenter, initialVolLfe, initialVolRLeft, initialVolRRight)
 #define aEnvMixer(pkt, inBuf, nSamples, swapReverb, negLeft, negRight, dryLeft, dryRight, wetLeft, wetRight) \
     aEnvMixerImpl(inBuf, nSamples, swapReverb, negLeft, negRight, dryLeft, dryRight, wetLeft, wetRight)
 #define aMix(pkt, c, g, i, o) aMixImpl(c, g, i, o)

@@ -452,31 +452,19 @@ s8 Audio_GetSfxReverb(u8 bankId, u8 entryIndex, u8 channelId) {
 }
 
 s8 Audio_GetSfxPan(f32 xPos, f32 zPos, u8 mode) {
-    if (sSfxChannelLayout != SFXCHAN_3) {
-        f32 absx = ABSF(xPos);
-        f32 absz = ABSF(zPos);
-        f32 pan;
+    // Calculate the angle in radians
+    float angle = atan2f(xPos, -zPos);  // Note: we use -z because positive z is typically "into" the screen
 
-        if ((absx < 1.0f) && (absz < 1.0f)) {
-            return 64;
-        }
-        absx = MIN(1200.0f, absx);
-        absz = MIN(1200.0f, absz);
-
-        if ((xPos == 0) && (zPos == 0)) {
-            pan = 0.5f;
-        } else if ((xPos >= 0.f) && (absz <= absx)) {
-            pan = 1.0f - ((2400.0f - absx) / (10.0f * (2400.0f - absz)));
-        } else if ((xPos < 0.0f) && (absz <= absx)) {
-            pan = (2400.0f - absx) / (10.0f * (2400.0f - absz));
-        } else {
-            pan = (xPos / (2.5f * absz)) + 0.5f;
-        }
-        return ROUND(pan * 127.0f);
-    } else if (mode != 4) {
-        return ((mode & 1) * 127);
+    // Convert angle to a value between 0 and 1
+    float normalized_angle = angle / (2 * M_PI);
+    if (normalized_angle < 0) {
+        normalized_angle += 1.0f;
     }
-    return 64;
+
+    // Map to 0-127 range
+    s8 pan = (s8)(normalized_angle * 128) % 128;
+
+    return pan;
 }
 
 f32 Audio_GetSfxFreqMod(u8 bankId, u8 entryIndex) {

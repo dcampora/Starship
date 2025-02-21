@@ -404,7 +404,8 @@ typedef struct {
 typedef struct {
     /* 0x00 */ u8 stereoHeadsetEffects : 1;
     /* 0x00 */ u8 usesHeadsetPanEffects : 1;
-    /* 0x00 */ u8 center : 2;
+    /* 0x00 */ u8 is_voice : 1;
+    /* 0x00 */ u8 is_sfx : 1;
     /* 0x00 */ u8 bit2 : 2;
     /* 0x00 */ u8 strongRight : 1;
     /* 0x00 */ u8 strongLeft : 1;
@@ -433,7 +434,8 @@ typedef struct SequenceChannel {
     /* 0x00 */ u8 hasInstrument : 1;
     /* 0x00 */ u8 stereoHeadsetEffects : 1;
     /* 0x00 */ u8 largeNotes : 1; // notes specify duration and velocity
-    /* 0x00 */ u8 center : 1;
+    /* 0x00 */ u8 is_voice : 1;
+    /* 0x00 */ u8 is_sfx : 1;
     union {
         struct {
             /* 0x01 */ u8 freqMod : 1;
@@ -555,8 +557,12 @@ typedef struct {
     /* 0x0C */ NoteSynthesisBuffers* synthesisBuffers;
     /* 0x10 */ s16 curVolLeft;
     /* 0x12 */ s16 curVolRight;
-    /* 0x14 */ char unk_14[0xC];
-} NoteSynthesisState; // size = 0x20
+    /* 0x14 */ s16 curVolCenter;
+    /* 0x16 */ s16 curVolLfe;
+    /* 0x18 */ s16 curVolRLeft;
+    /* 0x1A */ s16 curVolRRight;
+    /* 0x1C */ char unk_14[0xC];
+} NoteSynthesisState; // size = 0x1E
 
 typedef struct {
     /* 0x00 */ struct SequenceChannel* channel;
@@ -613,9 +619,13 @@ typedef struct {
     /* 0x05 */ u8 reverb;
     /* 0x06 */ u16 panVolLeft;
     /* 0x08 */ u16 panVolRight;
-    /* 0x0A */ u16 resampleRate;
-    /* 0x0C */ Sample** waveSampleAddr;
-} NoteSubEu; // size = 0x10
+    /* 0x0A */ u16 panVolCenter;
+    /* 0x0C */ u16 panVolLfe;
+    /* 0x0E */ u16 panVolRLeft;
+    /* 0x10 */ u16 panVolRRight;
+    /* 0x12 */ u16 resampleRate;
+    /* 0x14 */ Sample** waveSampleAddr;
+} NoteSubEu; // size = 0x16
 
 typedef struct Note {
     /* 0x00 */ AudioListItem listItem;

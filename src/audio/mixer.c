@@ -25,8 +25,8 @@ static struct {
     uint16_t out;
     uint16_t nbytes;
 
-    uint16_t vol[2];
-    uint16_t rate[2];
+    uint16_t vol[6];
+    uint16_t rate[6];
     uint16_t vol_wet;
     uint16_t rate_wet;
 
@@ -352,16 +352,26 @@ void aResampleImpl(uint8_t flags, uint16_t pitch, RESAMPLE_STATE state) {
     memcpy(state + 8, in, 8 * sizeof(int16_t));
 }
 
-void aEnvSetup1Impl(uint8_t initial_vol_wet, uint16_t rate_wet, uint16_t rate_left, uint16_t rate_right) {
+void aEnvSetup1Impl(uint8_t initial_vol_wet, uint16_t rate_wet, uint16_t rate_left, uint16_t rate_right,
+    uint16_t rate_center, uint16_t rate_lfe, uint16_t rate_rear_left, uint16_t rate_rear_right) {
     rspa.vol_wet = (uint16_t)(initial_vol_wet << 8);
     rspa.rate_wet = rate_wet;
     rspa.rate[0] = rate_left;
     rspa.rate[1] = rate_right;
+    rspa.rate[2] = rate_center;
+    rspa.rate[3] = rate_lfe;
+    rspa.rate[4] = rate_rear_left;
+    rspa.rate[5] = rate_rear_right;
 }
 
-void aEnvSetup2Impl(uint16_t initial_vol_left, uint16_t initial_vol_right) {
+void aEnvSetup2Impl(uint16_t initial_vol_left, uint16_t initial_vol_right, int16_t initial_vol_center,
+    int16_t initial_vol_lfe, int16_t initial_vol_rear_left, int16_t initial_vol_rear_right) {
     rspa.vol[0] = initial_vol_left;
     rspa.vol[1] = initial_vol_right;
+    rspa.vol[2] = initial_vol_center;
+    rspa.vol[3] = initial_vol_lfe;
+    rspa.vol[4] = initial_vol_rear_left;
+    rspa.vol[5] = initial_vol_rear_right;
 }
 
 void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
@@ -383,24 +393,18 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
     int16_t negs_wet[6] = {neg_3 ? -4 : 0, neg_2 ? -2 : 0, 0, 0, neg_3 ? -4 : 0, neg_2 ? -2 : 0};
     int swapped[6] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1, 2, 3, swap_reverb ? 5 : 4, swap_reverb ? 4 : 5};
 
-    uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1], rspa.vol[0], rspa.vol[1]};
-    uint16_t rates[6] = {rspa.rate[0], rspa.rate[1], rspa.rate[0], rspa.rate[1], rspa.rate[0], rspa.rate[1]};
-
+    uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[2], rspa.vol[3], rspa.vol[4], rspa.vol[5]};
+    
     do {
         for (int i = 0; i < 8; i++) {
             int16_t samples[6] = {0};
-            
-            if (center) {
-                samples[2] = *in;
-                // samples[3] = *in;
-            }
-            else {
-                samples[0] = *in;
-                samples[1] = *in;
-                // samples[3] = *in;
-                samples[4] = *in;
-                samples[5] = *in;
-            }
+
+            samples[0] = *in;
+            samples[1] = *in;
+            samples[2] = *in;
+            // samples[3] = *in;
+            samples[4] = *in;
+            samples[5] = *in;
             in++;
 
             for (int j = 0; j < 6; j++) {
@@ -413,7 +417,7 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
         }
 
         for (int i = 0; i < 6; i++) {
-            vols[i] += rates[i];
+            vols[i] += rspa.rate[i];
         }
         vol_wet += rate_wet;
 
