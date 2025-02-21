@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "mixer.h"
 
@@ -19,6 +20,9 @@
 // dcampora: note: -0x450 because every location starts at 0x450
 #define BUF_U8(a) (rspa.buf + ((a)-0x450))
 #define BUF_S16(a) (int16_t*) BUF_U8(a)
+
+#define SAMPLE_RATE 32000  // Adjusted to match the actual sample rate of 32 kHz
+#define CUTOFF_FREQ_LFE 80     // Cutoff frequency of 80 Hz
 
 static struct {
     uint16_t in;
@@ -375,7 +379,7 @@ void aEnvSetup2Impl(uint16_t initial_vol_left, uint16_t initial_vol_right, int16
 }
 
 void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
-				   bool neg_3, bool neg_2,
+                   bool neg_3, bool neg_2,
                    bool neg_left, bool neg_right,
                    int32_t wet_dry_addr, uint32_t center)
 {
@@ -394,7 +398,15 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
     int swapped[6] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1, 2, 3, swap_reverb ? 5 : 4, swap_reverb ? 4 : 5};
 
     uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[2], rspa.vol[3], rspa.vol[4], rspa.vol[5]};
-    
+
+    // Calculate the filter coefficient
+    float RC = 1.f / (2 * M_PI * CUTOFF_FREQ_LFE);
+    float dt = 1.f / SAMPLE_RATE;
+    float alpha = dt / (RC + dt);
+
+    // Low-pass filter state for the subwoofer channel
+    static float prev_lfe_sample = 0.0f;
+
     do {
         for (int i = 0; i < 8; i++) {
             int16_t samples[6] = {0};
@@ -402,17 +414,28 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
             samples[0] = *in;
             samples[1] = *in;
             samples[2] = *in;
-            // samples[3] = *in;
+            samples[3] = *in;  // LFE channel
             samples[4] = *in;
             samples[5] = *in;
             in++;
 
+            // Apply volume and negation
             for (int j = 0; j < 6; j++) {
                 samples[j] = (samples[j] * vols[j] >> 16) ^ negs[j];
             }
-        	for (int j = 0; j < 6; j++) {
-                *dry[j] = clamp16(*dry[j] + samples[j]); dry[j]++;
-                *wet[j] = clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs_wet[j])); wet[j]++;
+
+            // Apply low-pass filter to the LFE channel (index 3)
+            float lfe_sample = samples[3];
+            lfe_sample = alpha * lfe_sample + (1.0f - alpha) * prev_lfe_sample;
+            prev_lfe_sample = lfe_sample;
+            samples[3] = (int16_t)lfe_sample;
+
+            // Mix dry and wet signals
+            for (int j = 0; j < 6; j++) {
+                *dry[j] = clamp16(*dry[j] + samples[j]);
+                dry[j]++;
+                *wet[j] = clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs_wet[j]));
+                wet[j]++;
             }
         }
 

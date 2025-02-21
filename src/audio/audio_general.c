@@ -462,7 +462,9 @@ s8 Audio_GetSfxPan(f32 xPos, f32 zPos, u8 mode) {
     }
 
     // Map to 0-127 range
-    s8 pan = (s8)(normalized_angle * 128) % 128;
+    s8 pan = (s8) ((int)(normalized_angle * 128) % 128);
+    
+    printf("xPos: %f, zPos: %f, pan: %i\n", xPos, zPos, pan);
 
     return pan;
 }

@@ -1344,6 +1344,9 @@ Acmd* AudioSynth_ProcessEnvelope(Acmd* aList, NoteSubEu* noteSub, NoteSynthesisS
     if (panVolCenter != curVolCenter) {
         rampCenter = (panVolCenter - curVolCenter) / aiBufLenSmall;
     }
+    if (panVolLfe != curVolLfe) {
+        rampLfe = (panVolLfe - curVolLfe) / aiBufLenSmall;
+    }
 
     sourceReverbVol = synthState->reverbVol;
 
