@@ -438,6 +438,14 @@ void AudioThread_ProcessCmds(u32 msg) {
                         case AUDIOCMD_OP_CHANNEL_SET_IO:
                             if (cmd->arg2 < 8) {
                                 channel->seqScriptIO[cmd->arg2] = cmd->asSbyte;
+                                // Mark the audio as voice, sfx or bgm
+                                channel->is_voice = 0;
+                                channel->is_sfx = 0;
+                                if (cmd->arg0 == SEQ_PLAYER_VOICE) {
+                                    channel->is_voice = 1;
+                                } else if (cmd->arg0 == SEQ_PLAYER_SFX) {
+                                    channel->is_sfx = 1;
+                                }
                             }
                             break;
                         case AUDIOCMD_OP_CHANNEL_SET_MUTE:

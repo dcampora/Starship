@@ -392,11 +392,7 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
     // All speakers
     int16_t *dry[6] = {BUF_S16(0x990), BUF_S16(0x990 + 0x180 * 1), BUF_S16(0x990 + 0x180 * 2), BUF_S16(0x990 + 0x180 * 3), BUF_S16(0x990 + 0x180 * 4), BUF_S16(0x990 + 0x180 * 5)};
     int16_t *wet[6] = {BUF_S16(0xA20), BUF_S16(0xA20 + 0x180 * 1), BUF_S16(0xA20 + 0x180 * 2), BUF_S16(0xA20 + 0x180 * 3), BUF_S16(0xA20 + 0x180 * 4), BUF_S16(0xA20 + 0x180 * 5)};
-
-    int16_t negs[6] = {neg_left ? -1 : 0, neg_right ? -1 : 0, 0, 0, neg_left ? -1 : 0, neg_right ? -1 : 0};
-    int16_t negs_wet[6] = {neg_3 ? -4 : 0, neg_2 ? -2 : 0, 0, 0, neg_3 ? -4 : 0, neg_2 ? -2 : 0};
     int swapped[6] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1, 2, 3, swap_reverb ? 5 : 4, swap_reverb ? 4 : 5};
-
     uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[2], rspa.vol[3], rspa.vol[4], rspa.vol[5]};
 
     // Calculate the filter coefficient
@@ -419,9 +415,9 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
             samples[5] = *in;
             in++;
 
-            // Apply volume and negation
+            // Apply volume
             for (int j = 0; j < 6; j++) {
-                samples[j] = (samples[j] * vols[j] >> 16) ^ negs[j];
+                samples[j] = samples[j] * vols[j] >> 16;
             }
 
             // Apply low-pass filter to the LFE channel (index 3)
@@ -434,7 +430,7 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
             for (int j = 0; j < 6; j++) {
                 *dry[j] = clamp16(*dry[j] + samples[j]);
                 dry[j]++;
-                *wet[j] = clamp16(*wet[j] + ((samples[swapped[j]] * vol_wet >> 16) ^ negs_wet[j]));
+                *wet[j] = clamp16(*wet[j] + (samples[swapped[j]] * vol_wet >> 16));
                 wet[j]++;
             }
         }

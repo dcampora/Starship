@@ -196,13 +196,6 @@ void AudioSeq_SequencePlayerSetupChannels(SequencePlayer* seqPlayer, u16 channel
                 seqPlayer->channels[i] = channel;
             } else {
                 AudioSeq_InitSequenceChannel(channel);
-                
-                if (i < 15) {
-                    channel->is_sfx = 1;
-                } else if (i == 15) {
-                    channel->is_voice = 1;
-                }
-
                 seqPlayer->channels[i] = channel;
                 channel->seqPlayer = seqPlayer;
                 channel->fontId = seqPlayer->defaultFont;

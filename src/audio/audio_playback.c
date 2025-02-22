@@ -59,89 +59,48 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
     reverb = noteAttr->reverb;
     stereo = noteAttr->stereo;
     // pan %= ARRAY_COUNTU(gHeadsetPanVolume);
+
+    float max_vol_voice = 0.8f;
+    float max_vol_sfx = 0.7f;
+    float max_vol_music = 0.7f;
     
     if (stereo.s.is_voice) { // VOICE
-        panVolumeCenter = 0.8f;
+        panVolumeCenter = max_vol_voice;
     }
     else if (stereo.s.is_sfx) { // SFX
-        float angle = (float)pan / 128 * 2 * M_PI;
+        float pan_angle = (float)pan / 128 * 2 * M_PI;
+        
+        // Speaker angles in radians
+        const float front_left = 0.5236;
+        const float front_right = -0.5236;
+        const float rear_left = 1.9199;
+        const float rear_right = -1.9199;
 
-        if (angle <= M_PI_2) {
-            // Front right quadrant
-            panVolumeRight = sinf(angle);
-            panVolumeLeft = cosf(angle);
-        } else if (angle <= M_PI) {
-            // Back right quadrant
-            panVolumeRight = cosf(angle - M_PI_2);
-            panVolumeRearRight = sinf(angle - M_PI_2);
-        } else if (angle <= 3 * M_PI_2) {
-            // Back left quadrant
-            panVolumeRearRight = cosf(angle - M_PI);
-            panVolumeRearLeft = sinf(angle - M_PI);
-        } else {
-            // Front left quadrant
-            panVolumeRearLeft = cosf(angle - 3 * M_PI_2);
-            panVolumeLeft = sinf(angle - 3 * M_PI_2);
+        // Normalize pan_angle to [0, 2π]
+        pan_angle = fmodf(pan_angle, 2 * M_PI);
+        if (pan_angle < 0) pan_angle += 2 * M_PI;
+
+        // Calculate volumes using cosine panning law
+        panVolumeLeft = fmaxf(0, cosf(pan_angle - front_left));  // Front Left
+        panVolumeRight = fmaxf(0, cosf(pan_angle - front_right)); // Front Right
+        panVolumeRearLeft = fmaxf(0, cosf(pan_angle - rear_left));   // Rear Left
+        panVolumeRearRight = fmaxf(0, cosf(pan_angle - rear_right));  // Rear Right
+
+        // Normalize volumes
+        float sum = panVolumeLeft + panVolumeRight + panVolumeRearLeft + panVolumeRearRight;
+        if (sum > 0) {
+            panVolumeLeft = panVolumeLeft * max_vol_sfx / sum;
+            panVolumeRight = panVolumeRight * max_vol_sfx / sum;
+            panVolumeRearLeft = panVolumeRearLeft * max_vol_sfx / sum;
+            panVolumeRearRight = panVolumeRearRight * max_vol_sfx / sum;
         }
     } else { // MUSIC
-        panVolumeLeft = 0.707f;
-        panVolumeRight = 0.707f;
-        panVolumeRearLeft = 0.707f;
-        panVolumeRearRight = 0.707f;
+        panVolumeLeft = max_vol_music;
+        panVolumeRight = max_vol_music;
+        panVolumeRearLeft = max_vol_music;
+        panVolumeRearRight = max_vol_music;
     }
 
-    // if ((noteSub->bitField0.stereoHeadsetEffects) && (gAudioSoundMode == SOUNDMODE_HEADSET)) {
-    //     var_a0 = pan >> 1;
-    //     if (var_a0 >= ARRAY_COUNT(gHaasEffectDelaySizes)) {
-    //         var_a0 = ARRAY_COUNT(gHaasEffectDelaySizes) - 1;
-    //     }
-    //     noteSub->rightDelaySize = gHaasEffectDelaySizes[var_a0];
-    //     noteSub->leftDelaySize = gHaasEffectDelaySizes[ARRAY_COUNT(gHaasEffectDelaySizes) - 1 - var_a0];
-    //     noteSub->bitField0.stereoStrongRight = false;
-    //     noteSub->bitField0.stereoStrongLeft = false;
-    //     noteSub->bitField0.usesHeadsetPanEffects = true;
-
-    //     panVolumeLeft = gHeadsetPanVolume[pan];
-    //     pamVolumeRight = gHeadsetPanVolume[ARRAY_COUNT(gHeadsetPanVolume) - 1 - pan];
-    // } else if (noteSub->bitField0.stereoHeadsetEffects && (gAudioSoundMode == SOUNDMODE_STEREO)) {
-    //     noteSub->leftDelaySize = 0;
-    //     noteSub->rightDelaySize = 0;
-    //     noteSub->bitField0.usesHeadsetPanEffects = false;
-
-    //     panVolumeLeft = gStereoPanVolume[pan];
-    //     pamVolumeRight = gStereoPanVolume[ARRAY_COUNT(gStereoPanVolume) - 1 - pan];
-    //     strongRight = false;
-    //     strongLeft = false;
-    //     if (pan < 32) {
-    //         strongLeft = true;
-    //     } else if (pan > 96) {
-    //         strongRight = true;
-    //     }
-    //     noteSub->bitField0.stereoStrongRight = strongRight;
-    //     noteSub->bitField0.stereoStrongLeft = strongLeft;
-    //     switch (stereo.s.bit2) {
-    //         case 0:
-    //             noteSub->bitField0.stereoStrongRight = stereo.s.strongRight;
-    //             noteSub->bitField0.stereoStrongLeft = stereo.s.strongLeft;
-    //             break;
-    //         case 1:
-    //             break;
-    //         case 2:
-    //             noteSub->bitField0.stereoStrongRight = stereo.s.strongRight | strongRight;
-    //             noteSub->bitField0.stereoStrongLeft = stereo.s.strongLeft | strongLeft;
-    //             break;
-    //         case 3:
-    //             noteSub->bitField0.stereoStrongRight = stereo.s.strongRight ^ strongRight;
-    //             noteSub->bitField0.stereoStrongLeft = stereo.s.strongLeft ^ strongLeft;
-    //             break;
-    //     }
-    // } else if (gAudioSoundMode == SOUNDMODE_MONO) {
-    //     panVolumeLeft = 0.707f;
-    //     pamVolumeRight = 0.707f;
-    // } else {
-    //     panVolumeLeft = gDefaultPanVolume[pan];
-    //     pamVolumeRight = gDefaultPanVolume[ARRAY_COUNT(gDefaultPanVolume) - 1 - pan];
-    // }
     if (velocity < 0.0f) {
         velocity = 0.0f;
     }
@@ -360,7 +319,6 @@ void Audio_ProcessNotes(void) {
                 sp70.velocity = attr->velocity;
                 sp70.pan = attr->pan;
                 sp70.reverb = attr->reverb;
-                // printf("setting note attrs\n");
                 sp70.stereo = attr->stereo;
                 sp70.gain = attr->gain;
                 bookOffset = noteSub->bitField1.bookOffset;
