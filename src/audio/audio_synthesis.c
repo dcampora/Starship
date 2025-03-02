@@ -6,8 +6,8 @@
 
 // dcampora: Note every location starts at 0x450 (why?)
 #define DMEM_WET_SCRATCH 0x470
-#define DMEM_COMPRESSED_ADPCM_DATA 0x990
-#define DMEM_LEFT_CH 0x990
+#define DMEM_COMPRESSED_ADPCM_DATA 0xD50
+#define DMEM_LEFT_CH 0xD50
 #define DMEM_RIGHT_CH (DMEM_LEFT_CH + DMEM_1CH_SIZE)
 #define DMEM_CENTER_CH (DMEM_LEFT_CH + 2 * DMEM_1CH_SIZE)
 #define DMEM_SUBWOOFER_CH (DMEM_LEFT_CH + 3 * DMEM_1CH_SIZE)
@@ -1390,7 +1390,7 @@ Acmd* AudioSynth_ProcessEnvelope(Acmd* aList, NoteSubEu* noteSub, NoteSynthesisS
         aEnvSetup1(aList++, (sourceReverbVol & 0x7F), rampReverb, rampLeft, rampRight, rampCenter, rampLfe, rampRLeft, rampRRight);
         aEnvSetup2(aList++, curVolLeft, curVolRight, curVolCenter, curVolLfe, curVolRLeft, curVolRRight);
         aEnvMixer(aList++, dmemSrc, aiBufLen, 0, 0, ((sourceReverbVol & 0x80) >> 7),
-                  noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, 0x99B1C9E1, 0);
+                  noteSub->bitField0.stereoStrongRight, noteSub->bitField0.stereoStrongLeft, (DMEM_WET_LEFT_CH << 16) | DMEM_LEFT_CH, 0);
     }
 
     return aList;

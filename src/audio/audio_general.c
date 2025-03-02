@@ -464,8 +464,6 @@ s8 Audio_GetSfxPan(f32 xPos, f32 zPos, u8 mode) {
     // Map to 0-127 range
     s8 pan = (s8) ((int)(normalized_angle * 128 + 64) % 128);
     
-    printf("xPos: %f, zPos: %f, pan: %i\n", xPos, zPos, pan);
-
     return pan;
 }
 
@@ -1854,7 +1852,6 @@ void Audio_UpdateVoice(void) {
         AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_VOICE, 15, 4, voiceBank);
         AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_VOICE, 15, 5, voiceIdHi);
         AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_VOICE, 15, 6, voiceIdLo);
-        AUDIOCMD_CHANNEL_SET_IO(SEQ_PLAYER_VOICE, 15, 6, voiceIdLo);
         AUDIOCMD_CHANNEL_SET_STEREO(SEQ_PLAYER_VOICE, 15, 0x01);
         sSetNextVoiceId = false;
     } else if ((sMuteBgmForVoice) && (Audio_GetCurrentVoice() == 0)) {
@@ -2141,15 +2138,15 @@ void Audio_UpdatePlayerFreqMod(void) {
 void Audio_UpdatePlayerReverb(void) {
     u8 playerId;
 
-    // for (playerId = 0; playerId < 4; playerId++) {
-    //     if ((sPlayerNoise[playerId].form == FORM_ARWING) && (gPlayer[playerId].sfx.levelType == LEVELTYPE_PLANET)) {
-    //         if (gPlayer[playerId].pos.y < 150.0f) {
-    //             sPlayerNoise[playerId].reverbAdd = (150.0f - gPlayer[playerId].pos.y) * 0.53f;
-    //         } else {
-    //             sPlayerNoise[playerId].reverbAdd = 0;
-    //         }
-    //     }
-    // }
+    for (playerId = 0; playerId < 4; playerId++) {
+        if ((sPlayerNoise[playerId].form == FORM_ARWING) && (gPlayer[playerId].sfx.levelType == LEVELTYPE_PLANET)) {
+            if (gPlayer[playerId].pos.y < 150.0f) {
+                sPlayerNoise[playerId].reverbAdd = (150.0f - gPlayer[playerId].pos.y) * 0.53f;
+            } else {
+                sPlayerNoise[playerId].reverbAdd = 0;
+            }
+        }
+    }
 }
 
 void Audio_UpdatePlayerNoise(void) {
