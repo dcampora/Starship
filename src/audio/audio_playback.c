@@ -113,8 +113,8 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
     noteSub->panVolRight = (s32) (velocity * panVolumeRight * 4095.999f) * master_vol;
     noteSub->panVolRLeft = (s32) (velocity * panVolumeRearLeft * 4095.999f) * master_vol;
     noteSub->panVolRRight = (s32) (velocity * panVolumeRearRight * 4095.999f) * master_vol;
-    noteSub->panVolCenter = (s32) (panVolumeCenter * 4095.999f) * master_vol;
-    noteSub->panVolLfe = (s32) (0.707f * 4095.999f) * master_vol;
+    noteSub->panVolCenter = (s32) (velocity * panVolumeCenter * 4095.999f) * master_vol;
+    noteSub->panVolLfe = (s32) (4095.999f) * master_vol;
 
     noteSub->gain = noteAttr->gain;
     if (noteSub->reverb != reverb) {
