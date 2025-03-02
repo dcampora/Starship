@@ -68,13 +68,13 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
         panVolumeCenter = max_vol_voice;
     }
     else if (stereo.s.is_sfx) { // SFX
-        float pan_angle = (float)pan / 128 * 2 * M_PI;
+        float pan_angle = (float)(pan + 64) / 128 * 2 * M_PI;
         
         // Speaker angles in radians
-        const float front_left = 0.5236;
-        const float front_right = -0.5236;
-        const float rear_left = 1.9199;
-        const float rear_right = -1.9199;
+        const float front_left = -0.5236;
+        const float front_right = 0.5236;
+        const float rear_left = -1.57;
+        const float rear_right = 1.57;
         const float center = 0.0;
 
         // Normalize pan_angle to [0, 2π]
