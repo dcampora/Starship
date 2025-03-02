@@ -396,21 +396,16 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
     uint16_t vol_wet = rspa.vol_wet;
 
     // All speakers
-    // int dry_addr_start = wet_dry_addr & 0xFFFF;
-    // int wet_addr_start = wet_dry_addr >> 16;
+    int dry_addr_start = wet_dry_addr & 0xFFFF;
+    int wet_addr_start = wet_dry_addr >> 16;
     
-    // int16_t *dry[6];
-    // int16_t *wet[6];
-    // for (int i = 0; i < 6; i++) {
-    //     dry[i] = BUF_S16(dry_addr_start + max_num_samples * i);
-    //     wet[i] = BUF_S16(wet_addr_start + max_num_samples * i);
-    // }
-
-#define ADDR 0xD50
-#define WETADDR (ADDR + 0x180 * 6)
-
-    int16_t *dry[6] = {BUF_S16(ADDR), BUF_S16(ADDR + 0x180 * 1), BUF_S16(ADDR + 0x180 * 2), BUF_S16(ADDR + 0x180 * 3), BUF_S16(ADDR + 0x180 * 4), BUF_S16(ADDR + 0x180 * 5)};
-    int16_t *wet[6] = {BUF_S16(WETADDR), BUF_S16(WETADDR + 0x180 * 1), BUF_S16(WETADDR + 0x180 * 2), BUF_S16(WETADDR + 0x180 * 3), BUF_S16(WETADDR + 0x180 * 4), BUF_S16(WETADDR + 0x180 * 5)};
+    int16_t *dry[6];
+    int16_t *wet[6];
+    for (int i = 0; i < 6; i++) {
+        dry[i] = BUF_S16(dry_addr_start + max_num_samples * i * sizeof(int16_t));
+        wet[i] = BUF_S16(wet_addr_start + max_num_samples * i * sizeof(int16_t));
+    }
+    
     int swapped[6] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1, 2, 3, swap_reverb ? 5 : 4, swap_reverb ? 4 : 5};
     uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[2], rspa.vol[3], rspa.vol[4], rspa.vol[5]};
 
