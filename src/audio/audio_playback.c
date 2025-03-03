@@ -89,14 +89,16 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
         // panVolumeCenter = fmaxf(0, cosf(pan_angle - center));      // Center
 
         // Normalize volumes
-        float sum = panVolumeLeft + panVolumeRight + panVolumeRearLeft + panVolumeRearRight; // + panVolumeCenter
-        if (sum > 0) {
-            panVolumeLeft = panVolumeLeft * max_vol_sfx / sum;
-            panVolumeRight = panVolumeRight * max_vol_sfx / sum;
-            panVolumeRearLeft = panVolumeRearLeft * max_vol_sfx / sum;
-            panVolumeRearRight = panVolumeRearRight * max_vol_sfx / sum;
-            // panVolumeCenter = panVolumeCenter * max_vol_sfx / sum;
-        }
+        // float sum = panVolumeLeft + panVolumeRight + panVolumeRearLeft + panVolumeRearRight; // + panVolumeCenter
+        // if (sum > 0) {
+        //     panVolumeLeft = panVolumeLeft * max_vol_sfx / sum;
+        //     panVolumeRight = panVolumeRight * max_vol_sfx / sum;
+        //     panVolumeRearLeft = panVolumeRearLeft * max_vol_sfx / sum;
+        //     panVolumeRearRight = panVolumeRearRight * max_vol_sfx / sum;
+        //     // panVolumeCenter = panVolumeCenter * max_vol_sfx / sum;
+        // }
+
+        // printf("pan: %d, pan_angle: %f, left: %f, right: %f, rleft: %f, rright: %f\n", pan, pan_angle, panVolumeLeft, panVolumeRight, panVolumeRearLeft, panVolumeRearRight);
     } else { // MUSIC
         panVolumeLeft = max_vol_music;
         panVolumeRight = max_vol_music;
