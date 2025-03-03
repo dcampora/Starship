@@ -75,7 +75,7 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
         const float front_right = 0.5236;
         const float rear_left = -1.57;
         const float rear_right = 1.57;
-        const float center = 0.0;
+        // const float center = 0.0;
 
         // Normalize pan_angle to [0, 2π]
         pan_angle = fmodf(pan_angle, 2 * M_PI);
@@ -86,16 +86,16 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
         panVolumeRight = fmaxf(0, cosf(pan_angle - front_right)); // Front Right
         panVolumeRearLeft = fmaxf(0, cosf(pan_angle - rear_left));   // Rear Left
         panVolumeRearRight = fmaxf(0, cosf(pan_angle - rear_right));  // Rear Right
-        panVolumeCenter = fmaxf(0, cosf(pan_angle - center));      // Center
+        // panVolumeCenter = fmaxf(0, cosf(pan_angle - center));      // Center
 
         // Normalize volumes
-        float sum = panVolumeLeft + panVolumeRight + panVolumeRearLeft + panVolumeRearRight + panVolumeCenter;
+        float sum = panVolumeLeft + panVolumeRight + panVolumeRearLeft + panVolumeRearRight; // + panVolumeCenter
         if (sum > 0) {
             panVolumeLeft = panVolumeLeft * max_vol_sfx / sum;
             panVolumeRight = panVolumeRight * max_vol_sfx / sum;
             panVolumeRearLeft = panVolumeRearLeft * max_vol_sfx / sum;
             panVolumeRearRight = panVolumeRearRight * max_vol_sfx / sum;
-            panVolumeCenter = panVolumeCenter * max_vol_sfx / sum;
+            // panVolumeCenter = panVolumeCenter * max_vol_sfx / sum;
         }
     } else { // MUSIC
         panVolumeLeft = max_vol_music;
