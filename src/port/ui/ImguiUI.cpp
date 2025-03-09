@@ -162,6 +162,8 @@ void DrawSettingsMenu(){
             if (Ship::Context::GetInstance()->GetAudio()->GetAvailableAudioBackends()->size() <= 1) {
                 UIWidgets::ReEnableComponent("");
             }
+            
+            UIWidgets::PaddedEnhancementCheckbox("Surround 5.1 (needs reload)", "gAudioSurround51", true, false);
 
             ImGui::EndMenu();
         }
