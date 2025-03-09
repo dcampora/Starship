@@ -128,7 +128,7 @@ GameEngine::GameEngine() {
 
     auto window = std::make_shared<Fast::Fast3dWindow>(std::vector<std::shared_ptr<Ship::GuiWindow>>({}));
 
-    Ship::AudioSurroundSetting surroundSetting = Ship::Context::GetInstance()->GetConfig()->GetCurrentAudioSurround();
+    AudioSurroundSetting surroundSetting = Ship::Context::GetInstance()->GetConfig()->GetCurrentAudioSurround();
     this->context->Init(archiveFiles, {}, 3, { 32000, 1024, 1680, surroundSetting }, window, controlDeck);
 
     Ship::Context::GetInstance()->GetLogger()->set_level(
@@ -283,7 +283,7 @@ void GameEngine::StartFrame() const {
 
 #endif
 
-#define NUM_AUDIO_CHANNELS 6
+#define MAX_NUM_AUDIO_CHANNELS 6
 
 extern "C" u16 audBuffer = 0;
 #include <sf64audio_provisional.h>
@@ -324,20 +324,22 @@ void GameEngine::HandleAudioThread() {
         if (frames > 60) {
             countermin++;
         }
-        
-        s16 audio_buffer[SAMPLES_HIGH * NUM_AUDIO_CHANNELS * MAX_AUDIO_FRAMES_PER_UPDATE] = { 0 };
+
+        const int32_t num_audio_channels = GetAudioSurround() == surround51 ? 6 : 2;
+
+        s16 audio_buffer[SAMPLES_HIGH * MAX_NUM_AUDIO_CHANNELS * MAX_AUDIO_FRAMES_PER_UPDATE] = { 0 };
         for (int i = 0; i < AUDIO_FRAMES_PER_UPDATE; i++) {
-            AudioThread_CreateNextAudioBuffer(audio_buffer + i * (num_audio_samples * NUM_AUDIO_CHANNELS),
+            AudioThread_CreateNextAudioBuffer(audio_buffer + i * (num_audio_samples * num_audio_channels),
                                               num_audio_samples);
         }
 #ifdef PIPE_DEBUG
         if (outfile.is_open()) {
             outfile.write(reinterpret_cast<char*>(audio_buffer),
-                          num_audio_samples * (sizeof(int16_t) * NUM_AUDIO_CHANNELS * AUDIO_FRAMES_PER_UPDATE));
+                          num_audio_samples * (sizeof(int16_t) * num_audio_channels * AUDIO_FRAMES_PER_UPDATE));
         }
 #endif
         AudioPlayerPlayFrame((u8*) audio_buffer,
-                             num_audio_samples * (sizeof(int16_t) * NUM_AUDIO_CHANNELS * AUDIO_FRAMES_PER_UPDATE));
+                             num_audio_samples * (sizeof(int16_t) * num_audio_channels * AUDIO_FRAMES_PER_UPDATE));
         
         audio.processing = false;
         audio.cv_from_thread.notify_one();
