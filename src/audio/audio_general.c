@@ -452,17 +452,18 @@ s8 Audio_GetSfxReverb(u8 bankId, u8 entryIndex, u8 channelId) {
 }
 
 s8 Audio_GetSfxPan(f32 xPos, f32 zPos, u8 mode) {
+    if (xPos == 0.0f && zPos == 0.0f) {
+        return 64;
+    }
+
     // Calculate the angle in radians
     float angle = atan2f(xPos, -zPos);  // Note: we use -z because positive z is typically "into" the screen
 
     // Convert angle to a value between 0 and 1
-    float normalized_angle = angle / (2 * M_PI);
-    if (normalized_angle < 0) {
-        normalized_angle += 1.0f;
-    }
+    float normalized_angle = (angle / (2 * M_PI)) + 0.5f;
 
     // Map to 0-127 range
-    s8 pan = (s8) ((int)(normalized_angle * 128 + 64) % 128);
+    s8 pan = (s8) ((int)(normalized_angle * 128) % 128);
     
     return pan;
 }
