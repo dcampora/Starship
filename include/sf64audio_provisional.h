@@ -601,7 +601,7 @@ typedef struct {
         /* 0x00 */ volatile u8 enabled : 1;
         /* 0x00 */ u8 needsInit : 1;
         /* 0x00 */ u8 finished : 1; // ?
-        /* 0x00 */ u8 center : 1;
+        /* 0x00 */ u8 unused : 1;
         /* 0x00 */ u8 stereoStrongRight : 1;
         /* 0x00 */ u8 stereoStrongLeft : 1;
         /* 0x00 */ u8 stereoHeadsetEffects : 1;
