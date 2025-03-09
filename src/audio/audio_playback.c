@@ -60,12 +60,11 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
     stereo = noteAttr->stereo;
     // pan %= ARRAY_COUNTU(gHeadsetPanVolume);
 
-    float max_vol_voice = 0.8f;
-    float max_vol_sfx = 0.7f;
-    float max_vol_music = 0.7f;
+    const float vol_voice = 0.8f;
+    const float vol_music = 0.707f;
     
     if (stereo.s.is_voice) { // VOICE
-        panVolumeCenter = max_vol_voice;
+        panVolumeCenter = vol_voice;
     }
     else if (stereo.s.is_sfx) { // SFX
         float pan_angle = (float)(pan + 64) / 128 * 2 * M_PI;
@@ -75,7 +74,6 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
         const float front_right = 0.5236;
         const float rear_left = -1.92;
         const float rear_right = 1.92;
-        // const float center = 0.0;
 
         // Normalize pan_angle to [0, 2π]
         pan_angle = fmodf(pan_angle, 2 * M_PI);
@@ -86,14 +84,13 @@ void Audio_InitNoteSub(Note* note, NoteAttributes* noteAttr) {
         panVolumeRight = fmaxf(0, cosf(pan_angle - front_right)); // Front Right
         panVolumeRearLeft = fmaxf(0, cosf(pan_angle - rear_left));   // Rear Left
         panVolumeRearRight = fmaxf(0, cosf(pan_angle - rear_right));  // Rear Right
-        // panVolumeCenter = fmaxf(0, cosf(pan_angle - center));      // Center
 
-        // printf("pan: %d, pan_angle: %f, left: %f, right: %f, rleft: %f, rright: %f, center: %f\n", pan, pan_angle, panVolumeLeft, panVolumeRight, panVolumeRearLeft, panVolumeRearRight, panVolumeCenter);
+        // printf("pan: %d, pan_angle: %f, left: %f, right: %f, rleft: %f, rright: %f\n", pan, pan_angle, panVolumeLeft, panVolumeRight, panVolumeRearLeft, panVolumeRearRight);
     } else { // MUSIC
-        panVolumeLeft = max_vol_music;
-        panVolumeRight = max_vol_music;
-        panVolumeRearLeft = max_vol_music;
-        panVolumeRearRight = max_vol_music;
+        panVolumeLeft = vol_music;
+        panVolumeRight = vol_music;
+        panVolumeRearLeft = vol_music;
+        panVolumeRearRight = vol_music;
     }
 
     if (velocity < 0.0f) {
