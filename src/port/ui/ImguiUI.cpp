@@ -163,7 +163,7 @@ void DrawSettingsMenu(){
                 UIWidgets::ReEnableComponent("");
             }
             
-            UIWidgets::PaddedEnhancementCheckbox("Surround 5.1 (needs reload)", "gAudioSurround51", true, false);
+            UIWidgets::PaddedEnhancementCheckbox("Surround 5.1 (needs reload)", "gSurroundAudio", true, false);
 
             ImGui::EndMenu();
         }
