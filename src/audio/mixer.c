@@ -17,7 +17,6 @@
 #define ROUND_DOWN_16(v) ((v) & ~0xf)
 
 #define DMEM_BUF_SIZE (0x1B90) // 7056 B
-// dcampora: note: -0x450 because every location starts at 0x450
 #define BUF_U8(a) (rspa.buf + ((a)-0x450))
 #define BUF_S16(a) (int16_t*) BUF_U8(a)
 
@@ -135,23 +134,20 @@ void aInterleaveImpl(uint16_t left, uint16_t right, uint16_t center, uint16_t lf
 
     int count = rspa.nbytes / (num_channels * sizeof(int16_t));
 
-    if (num_channels == 2) {
-        int16_t *l = BUF_S16(left);
-        int16_t *r = BUF_S16(right);
-        int16_t *d = BUF_S16(rspa.out);
+    int16_t *l = BUF_S16(left);
+    int16_t *r = BUF_S16(right);
+    int16_t *d = BUF_S16(rspa.out);
 
+    if (num_channels == 2) {
         for (int i = 0; i < count; i++) {
             *d++ = *l++;
             *d++ = *r++;
         }
     } else {
-        int16_t *l = BUF_S16(left);
-        int16_t *r = BUF_S16(right);
         int16_t *c = BUF_S16(center);
         int16_t *lf = BUF_S16(lfe);
         int16_t *sl = BUF_S16(surround_left);
         int16_t *sr = BUF_S16(surround_right);
-        int16_t *d = BUF_S16(rspa.out);
 
         for (int i = 0; i < count; i++) {
             *d++ = *l++;
@@ -298,9 +294,8 @@ void aEnvSetup2Impl(uint16_t initial_vol_left, uint16_t initial_vol_right, int16
 }
 
 void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
-                   bool neg_3, bool neg_2,
                    bool neg_left, bool neg_right,
-                   int32_t wet_dry_addr, uint32_t center)
+                   uint32_t wet_dry_addr, uint32_t haas_temp_addr, uint32_t num_channels)
 {
     // Note: max number of samples is 192 (192 * 2 = 384 bytes = 0x180)
     int max_num_samples = 192;
@@ -325,60 +320,102 @@ void aEnvMixerImpl(uint16_t in_addr, uint16_t n_samples, bool swap_reverb,
         wet[i] = BUF_S16(wet_addr_start + max_num_samples * i * sizeof(int16_t));
     }
     
-    int swapped[6] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1, 2, 3, swap_reverb ? 1 : 0, swap_reverb ? 0 : 1};
     uint16_t vols[6] = {rspa.vol[0], rspa.vol[1], rspa.vol[2], rspa.vol[3], rspa.vol[4], rspa.vol[5]};
+    int swapped[2] = {swap_reverb ? 1 : 0, swap_reverb ? 0 : 1};
 
-    // Calculate the filter coefficient
-    float RC = 1.f / (2 * M_PI * CUTOFF_FREQ_LFE);
-    float dt = 1.f / SAMPLE_RATE;
-    float alpha = dt / (RC + dt);
+    if (num_channels == 6) {
+        // Calculate the filter coefficient
+        float RC = 1.f / (2 * M_PI * CUTOFF_FREQ_LFE);
+        float dt = 1.f / SAMPLE_RATE;
+        float alpha = dt / (RC + dt);
 
-    // Low-pass filter state for the subwoofer channel
-    static float prev_lfe_sample = 0.0f;
+        // Low-pass filter state for the subwoofer channel
+        static float prev_lfe_sample = 0.0f;
 
-    do {
-        for (int i = 0; i < 8; i++) {
-            int16_t samples[6] = {0};
+        for (int i = 0; i < n / 8; i++) {
+            for (int k = 0; k < 8; k++) {
+                int16_t samples[6] = {0};
 
-            samples[0] = *in;
-            samples[1] = *in;
-            samples[2] = *in;
-            samples[3] = *in;  // LFE channel
-            samples[4] = *in;
-            samples[5] = *in;
-            in++;
+                samples[0] = *in;
+                samples[1] = *in;
+                samples[2] = *in;
+                samples[3] = *in;  // LFE channel
+                samples[4] = *in;
+                samples[5] = *in;
+                in++;
 
-            // Apply volume
-            for (int j = 0; j < 6; j++) {
-                samples[j] = samples[j] * vols[j] >> 16;
+                // Apply volume
+                for (int j = 0; j < 6; j++) {
+                    samples[j] = samples[j] * vols[j] >> 16;
+                }
+
+                // Apply low-pass filter to the LFE channel (index 3)
+                float lfe_sample = samples[3];
+                lfe_sample = alpha * lfe_sample + (1.0f - alpha) * prev_lfe_sample;
+                prev_lfe_sample = lfe_sample;
+                samples[3] = (int16_t)lfe_sample;
+
+                // Mix dry and wet signals
+                for (int j = 0; j < 6; j++) {
+                    *dry[j] = clamp16(*dry[j] + samples[j]);
+                    dry[j]++;
+
+                    if (j >= 4) {
+                        // Apply reverb only to the rear channels (4 and 5)
+                        *wet[j] = clamp16(*wet[j] + (samples[swapped[j % 2]] * vol_wet >> 16));
+                        wet[j]++;
+                    }
+                }
             }
 
-            // Apply low-pass filter to the LFE channel (index 3)
-            float lfe_sample = samples[3];
-            lfe_sample = alpha * lfe_sample + (1.0f - alpha) * prev_lfe_sample;
-            prev_lfe_sample = lfe_sample;
-            samples[3] = (int16_t)lfe_sample;
-
-            // Mix dry and wet signals
             for (int j = 0; j < 6; j++) {
-                *dry[j] = clamp16(*dry[j] + samples[j]);
-                dry[j]++;
+                vols[j] += rspa.rate[j];
+            }
+            vol_wet += rate_wet;
+        }
+    } else {
+        // Account for haas effect
+        int haas_addr_left = haas_temp_addr >> 16;
+        int haas_addr_right = haas_temp_addr & 0xFFFF;
 
-                if (j >= 4) {
-                    // Apply reverb only to the rear channels (4 and 5)
+        if (haas_addr_left) {
+            dry[0] = BUF_S16(haas_addr_left);
+        } else if (haas_addr_right) {
+            dry[1] = BUF_S16(haas_addr_right);
+        }
+
+        int16_t negs[2] = {neg_left ? 0 : 0xFFFF, neg_right ? 0 : 0xFFFF};
+
+        for (int i = 0; i < n / 8; i++) {
+            for (int k = 0; k < 8; k++) {
+                int16_t samples[2] = {0};
+
+                samples[0] = *in;
+                samples[1] = *in;
+                in++;
+
+                // Apply volume
+                for (int j = 0; j < 2; j++) {
+                    samples[j] = (samples[j] * vols[j] >> 16) & negs[j];
+                }
+
+                // Mix dry and wet signals
+                for (int j = 0; j < 2; j++) {
+                    *dry[j] = clamp16(*dry[j] + samples[j]);
+                    dry[j]++;
+
+                    // Apply reverb
                     *wet[j] = clamp16(*wet[j] + (samples[swapped[j]] * vol_wet >> 16));
                     wet[j]++;
                 }
             }
-        }
 
-        for (int i = 0; i < 6; i++) {
-            vols[i] += rspa.rate[i];
+            for (int j = 0; j < 2; j++) {
+                vols[j] += rspa.rate[j];
+            }
+            vol_wet += rate_wet;
         }
-        vol_wet += rate_wet;
-
-        n -= 8;
-    } while (n > 0);
+    }
 }
 
 void aMixImpl(uint16_t count, int16_t gain, uint16_t in_addr, uint16_t out_addr) {
