@@ -128,120 +128,39 @@ void aSetBufferImpl(uint8_t flags, uint16_t in, uint16_t out, uint16_t nbytes) {
     rspa.nbytes = nbytes;
 }
 
-void aInterleaveImpl(uint16_t left, uint16_t right, uint16_t center, uint16_t lfe, uint16_t surround_left, uint16_t surround_right) {
+void aInterleaveImpl(uint16_t left, uint16_t right, uint16_t center, uint16_t lfe, uint16_t surround_left, uint16_t surround_right, uint16_t num_channels) {
     if (rspa.nbytes == 0) {
         return;
     }
 
-    int count = rspa.nbytes / (6 * 8 * sizeof(int16_t));
-    int16_t *l = BUF_S16(left);
-    int16_t *r = BUF_S16(right);
-    int16_t *c = BUF_S16(center);
-    int16_t *lf = BUF_S16(lfe);
-    int16_t *sl = BUF_S16(surround_left);
-    int16_t *sr = BUF_S16(surround_right);
-    int16_t *d = BUF_S16(rspa.out);
+    int count = rspa.nbytes / (num_channels * sizeof(int16_t));
 
-    while (count > 0) {
-        int16_t l0 = *l++;
-        int16_t l1 = *l++;
-        int16_t l2 = *l++;
-        int16_t l3 = *l++;
-        int16_t l4 = *l++;
-        int16_t l5 = *l++;
-        int16_t l6 = *l++;
-        int16_t l7 = *l++;
-        int16_t r0 = *r++;
-        int16_t r1 = *r++;
-        int16_t r2 = *r++;
-        int16_t r3 = *r++;
-        int16_t r4 = *r++;
-        int16_t r5 = *r++;
-        int16_t r6 = *r++;
-        int16_t r7 = *r++;
-        int16_t c0 = *c++;
-        int16_t c1 = *c++;
-        int16_t c2 = *c++;
-        int16_t c3 = *c++;
-        int16_t c4 = *c++;
-        int16_t c5 = *c++;
-        int16_t c6 = *c++;
-        int16_t c7 = *c++;
-        int16_t lf0 = *lf++;
-        int16_t lf1 = *lf++;
-        int16_t lf2 = *lf++;
-        int16_t lf3 = *lf++;
-        int16_t lf4 = *lf++;
-        int16_t lf5 = *lf++;
-        int16_t lf6 = *lf++;
-        int16_t lf7 = *lf++;
-        int16_t sl0 = *sl++;
-        int16_t sl1 = *sl++;
-        int16_t sl2 = *sl++;
-        int16_t sl3 = *sl++;
-        int16_t sl4 = *sl++;
-        int16_t sl5 = *sl++;
-        int16_t sl6 = *sl++;
-        int16_t sl7 = *sl++;
-        int16_t sr0 = *sr++;
-        int16_t sr1 = *sr++;
-        int16_t sr2 = *sr++;
-        int16_t sr3 = *sr++;
-        int16_t sr4 = *sr++;
-        int16_t sr5 = *sr++;
-        int16_t sr6 = *sr++;
-        int16_t sr7 = *sr++;
+    if (num_channels == 2) {
+        int16_t *l = BUF_S16(left);
+        int16_t *r = BUF_S16(right);
+        int16_t *d = BUF_S16(rspa.out);
 
-        *d++ = l0;
-        *d++ = r0;
-        *d++ = c0;
-        *d++ = lf0;
-        *d++ = sl0;
-        *d++ = sr0;
-        *d++ = l1;
-        *d++ = r1;
-        *d++ = c1;
-        *d++ = lf1;
-        *d++ = sl1;
-        *d++ = sr1;
-        *d++ = l2;
-        *d++ = r2;
-        *d++ = c2;
-        *d++ = lf2;
-        *d++ = sl2;
-        *d++ = sr2;
-        *d++ = l3;
-        *d++ = r3;
-        *d++ = c3;
-        *d++ = lf3;
-        *d++ = sl3;
-        *d++ = sr3;
-        *d++ = l4;
-        *d++ = r4;
-        *d++ = c4;
-        *d++ = lf4;
-        *d++ = sl4;
-        *d++ = sr4;
-        *d++ = l5;
-        *d++ = r5;
-        *d++ = c5;
-        *d++ = lf5;
-        *d++ = sl5;
-        *d++ = sr5;
-        *d++ = l6;
-        *d++ = r6;
-        *d++ = c6;
-        *d++ = lf6;
-        *d++ = sl6;
-        *d++ = sr6;
-        *d++ = l7;
-        *d++ = r7;
-        *d++ = c7;
-        *d++ = lf7;
-        *d++ = sl7;
-        *d++ = sr7;
+        for (int i = 0; i < count; i++) {
+            *d++ = *l++;
+            *d++ = *r++;
+        }
+    } else {
+        int16_t *l = BUF_S16(left);
+        int16_t *r = BUF_S16(right);
+        int16_t *c = BUF_S16(center);
+        int16_t *lf = BUF_S16(lfe);
+        int16_t *sl = BUF_S16(surround_left);
+        int16_t *sr = BUF_S16(surround_right);
+        int16_t *d = BUF_S16(rspa.out);
 
-        --count;
+        for (int i = 0; i < count; i++) {
+            *d++ = *l++;
+            *d++ = *r++;
+            *d++ = *c++;
+            *d++ = *lf++;
+            *d++ = *sl++;
+            *d++ = *sr++;
+        }
     }
 }
 

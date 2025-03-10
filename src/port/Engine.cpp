@@ -325,7 +325,7 @@ void GameEngine::HandleAudioThread() {
             countermin++;
         }
 
-        const int32_t num_audio_channels = GetAudioSurround() == surround51 ? 6 : 2;
+        const int32_t num_audio_channels = GetNumAudioChannels();
 
         s16 audio_buffer[SAMPLES_HIGH * MAX_NUM_AUDIO_CHANNELS * MAX_AUDIO_FRAMES_PER_UPDATE] = { 0 };
         for (int i = 0; i < AUDIO_FRAMES_PER_UPDATE; i++) {

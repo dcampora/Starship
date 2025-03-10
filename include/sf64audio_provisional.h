@@ -52,7 +52,7 @@ typedef void (*AudioCustomUpdateFunction)(void);
 // Samples are processed in groups of 16 called a "frame"
 #define SAMPLES_PER_FRAME ADPCMFSIZE
 
-#define NUM_AUDIO_CHANNELS 6
+#define MAX_NUM_AUDIO_CHANNELS 6
 
 // The length of one channel is 12 frames
 #define DMEM_1CH_SIZE (12 * SAMPLES_PER_FRAME * SAMPLE_SIZE)

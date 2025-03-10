@@ -37,7 +37,7 @@ void aLoadBufferImpl(const void* source_addr, uint16_t dest_addr, uint16_t nbyte
 void aSaveBufferImpl(uint16_t source_addr, int16_t* dest_addr, uint16_t nbytes);
 void aLoadADPCMImpl(int num_entries_times_16, const int16_t* book_source_addr);
 void aSetBufferImpl(uint8_t flags, uint16_t in, uint16_t out, uint16_t nbytes);
-void aInterleaveImpl(uint16_t left, uint16_t right, uint16_t center, uint16_t lfe, uint16_t surround_left, uint16_t surround_right);
+void aInterleaveImpl(uint16_t left, uint16_t right, uint16_t center, uint16_t lfe, uint16_t surround_left, uint16_t surround_right, uint16_t num_audio_channels);
 void aDMEMMoveImpl(uint16_t in_addr, uint16_t out_addr, int nbytes);
 void aSetLoopImpl(ADPCM_STATE* adpcm_loop_state);
 void aADPCMdecImpl(uint8_t flags, ADPCM_STATE state);
@@ -67,7 +67,7 @@ void aUnkCmd19Impl(uint8_t f, uint16_t count, uint16_t out_addr, uint16_t in_add
 #define aSaveBuffer(pkt, s, d, c) aSaveBufferImpl(s, d, c)
 #define aLoadADPCM(pkt, c, d) aLoadADPCMImpl(c, d)
 #define aSetBuffer(pkt, f, i, o, c) aSetBufferImpl(f, i, o, c)
-#define aInterleave(pkt, l, r, c, lfe, sl, sr) aInterleaveImpl(l, r, c, lfe, sl, sr)
+#define aInterleave(pkt, l, r, c, lfe, sl, sr, num_channels) aInterleaveImpl(l, r, c, lfe, sl, sr, num_channels)
 #define aDMEMMove(pkt, i, o, c) aDMEMMoveImpl(i, o, c)
 #define aSetLoop(pkt, a) aSetLoopImpl(a)
 #define aADPCMdec(pkt, f, s) aADPCMdecImpl(f, s)
